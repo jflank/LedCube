@@ -40,12 +40,15 @@ class LedCube
   int clear();
 	      
   int drawCube();
-
+  
+  int setSpeed(int newSpeed); 
+  int getSpeed(); 
+  
  private:
 
  protected:
-  int m_cube[CUBESIZE][CUBESIZE][CUBESIZE];
+  int             m_cube[CUBESIZE][CUBESIZE][CUBESIZE];
   pthread_mutex_t m_mutex;
-  
+  int             m_speed;
 };
 #endif //_H_LEDCUBE

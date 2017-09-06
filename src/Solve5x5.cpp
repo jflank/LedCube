@@ -2,6 +2,9 @@
  * Author Joshua Flank
  * September 2017
  * Basic functionality to solve a 5x5 cube, filled wtih Z's
+ *
+ * This should solve the puzzle, in around 778 billion Z placements. 
+ * If done 1 second per piece, it would take around 25 years
  */
 
 #include <stdio.h>
@@ -16,7 +19,7 @@
 #include "Solve5x5.h"
 #include "GLcube.h"
 
-SolveCube * mySolveCubeP = NULL;
+extern LedCube * myPortCubeP; //declared in main.cpp
 
 const char * directions[] =
   {
@@ -99,6 +102,7 @@ int SolveCube::printBox()
 
 int SolveCube::shareBox()
 {
+  pthread_mutex_lock( &m_mutex);
   int x,y,z;
   //  printf ("----------------------\n");  
   for (z = 0; z < 5; z ++){
@@ -108,6 +112,7 @@ int SolveCube::shareBox()
       }
     }
   }
+  pthread_mutex_unlock( &m_mutex);
   return 0;
 }
 
@@ -189,17 +194,21 @@ int SolveCube::solver(int wormID)
     return 0;
   }
   numiter ++;
-  //  usleep(100);
+  if (m_speed > 0 && m_speed < 1000000) {
+    usleep(1000000 - m_speed);
+    shareBox();
+    cubeToCube(myGLCubeP); // this may do nothing if GLcube wasn't created.
+    cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
+  }
   if (numiter >= inctotaliter) {
     numiter = 0;
     totaliter++;
-    if (myGLCubeP != NULL) {
-      shareBox();
-      cubeToCube(myGLCubeP);
-      //      printBox(); //jhf test
-      //            drawCube();
-      //            myGLCubeP->drawCube();
-    }
+    shareBox();
+    cubeToCube(myGLCubeP); // this may do nothing if GLcube wasn't created.
+    cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
+    //      printBox(); //jhf test
+    //      drawCube();
+    //      myGLCubeP->drawCube();
   }
 
   numiter2 ++;
@@ -240,7 +249,6 @@ SolveCube::SolveCube() : LedCube() {
 
 void * mainsolve(void * ptr) 
 {
-  mySolveCubeP = new SolveCube();
   cout << "Starting SolveCube\n";
   mySolveCubeP->init();
   mySolveCubeP->printBox();

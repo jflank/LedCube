@@ -3,11 +3,16 @@
 
 #include "Ledcube.h"
 
+#define GLMAXSPEED 1000
+#define GLDEFSPEED 900
+#define GLMINSPEED 1
+
 class GLCube : public LedCube {
  public:
   GLCube();
   ~GLCube();
-
+  int setSpeed(int speed);
+  
   void drawSpheres();
   
  private:

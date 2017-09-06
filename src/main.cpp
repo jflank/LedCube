@@ -20,36 +20,41 @@
 #include "GLcube.h"
 #include "Solve5x5.h"
 
+using namespace std;
+
 static void show_usage()
 {
-  std::cerr << "Usage: " << std::endl;
-  std::cout << "Options:\n"
-       << "\t-h,--help\t\tShow this help message\n"
-       << "\t-a,--OPENGL\t\tSee The OpenGL threads only\n"
-       << "\t-s,--SOLVER\t\tSee The solver in action\n"
-       << std::endl;
+  cerr << "Usage: " << endl;
+  cout << "Options:\n"
+       << "\t-h\tShow this help message\n"
+       << "\t-g\tSee The OpenGL threads only\n"
+       << "\t-a\tSet the solver speed (-a 1 is around 1 piece per second)\n"
+       << "\t-s\tSee The solver in action\n"
+       << "\t-p\tSend data over the serial port\n"
+       << endl;
 }
-  
 
-//pthread_mutex_t mutex1;
+LedCube   * myPortCubeP = NULL;
+SolveCube * mySolveCubeP = NULL;
+
 
 int main(int argc, char *argv[])
 {
 
   pthread_t thread1, thread2;
   int ret;
-  //  mutex1 = PTHREAD_MUTEX_INITIALIZER;
   int gflag = 0;
   int aflag = 0;
   int sflag = 0;
   int tflag = 0;
+  int pflag = 0;
   char *avalue = NULL;
   int c;
 
   opterr = 0;
 
     
-  while ((c = getopt (argc, argv, "gsta:")) != -1)
+  while ((c = getopt (argc, argv, "gstpa:")) != -1) {
     switch (c) {
     case 'g':
       gflag = 1;
@@ -63,6 +68,9 @@ int main(int argc, char *argv[])
     case 't':
       tflag = 1;
       break;
+    case 'p':
+      pflag = 1;
+      break;
     case '?':
     default:
       if (optopt == 'a')
@@ -75,7 +83,13 @@ int main(int argc, char *argv[])
 		 optopt);
       show_usage();
       return 1;
-    }  
+    }
+  }
+  
+  if (pflag) {
+    myPortCubeP = new LedCube();
+  }
+	     
   
   if (gflag && tflag == 0) {
     ret = pthread_create( &thread1, NULL, mainGL, NULL);
@@ -85,7 +99,12 @@ int main(int argc, char *argv[])
   }
   
   if (sflag) {
-    if (tflag) {
+    mySolveCubeP = new SolveCube();
+    if (avalue != NULL) {
+      int spd = strtol(avalue, &avalue, 10);
+      mySolveCubeP->setSpeed(spd);
+    }
+    if (tflag && gflag == 0) {
       myGLCubeP = new GLCube();
     }
     ret = pthread_create( &thread2, NULL, mainsolve, NULL);

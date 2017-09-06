@@ -24,6 +24,7 @@
 using namespace std;
 
 LedCube::LedCube () {
+  m_speed = 0; // default speed is human visible
   init();
 }
 
@@ -125,12 +126,6 @@ int LedCube::receiveCube(uint8_t * cache)
     }
   }
   */    
-    /* old
-    for (int i=0; i < 64; i ++) { // The next 64 char's are the data 
-    m_cube[0][i/8][i%8] = cubeCharsP[i+1];
-    cout << "Reading: " << i << ":" << (int)m_cube[0][i/8][i%8] << endl;
-  }
-    */
   pthread_mutex_unlock( &m_mutex);
   return 0;
 }
@@ -138,8 +133,7 @@ int LedCube::receiveCube(uint8_t * cache)
 void coutpackage(const uint8_t * data, int data_length)
 {
   for(int i=0; i<data_length; ++i) {
-    //printf("%02x", data[i]);
-    std::cout <<std::bitset<8>(data[i]);
+    cout <<std::bitset<8>(data[i]);
   }
   cout <<endl;
  
@@ -148,15 +142,11 @@ void coutpackage(const uint8_t * data, int data_length)
 /* change to byte[] */
 uint8_t * LedCube::cubeToChar     (uint8_t * cache)
 {
-  //  unsigned char * cache = new unsigned char [PACKETSIZE];
-  
   memset(cache, 0x00, PACKETSIZE);
 
   cache[0] = 242; // hex-to-decimal of 0xF2
 
-  //  char *dot = (char*)m_cube;
   pthread_mutex_lock( &m_mutex);
-
 
   for (int x = 0; x < CUBESIZE; x++) {
     for (int y = 0; y < CUBESIZE; y++) {
@@ -167,31 +157,6 @@ uint8_t * LedCube::cubeToChar     (uint8_t * cache)
       }
     }
   }
-  /*  
-  for (int i = 0; i < PACKETSIZE-1; i ++) {
-    int index = i/8;
-    if (dot[i]) {
-      cache[index+1] += (0x01 << (i % 8));
-    }
-    cout << i << ": " << index+1;
-    printf(": %02x :", dot[i]);
-    std::cout <<std::bitset<8>(cache[index+1]) << endl;
-
-  }
-  */
-  //jhf  coutpackage(cache, PACKETSIZE);
-  /*
-  for(z = 0; z < CUBESIZE; z++){
-    for(y = 0; y < CUBESIZE; y++){
-      for(x = 0; x < CUBESIZE; x++){
-	if(m_cube[x][y][z] == 1) {
-	  cubeCharsP[i] |= 0x01<<((CUBESIZE-1)-x);
-	}
-      }
-      i++;
-    }
-  }
-  */
   pthread_mutex_unlock( &m_mutex);
   return cache;
 }
@@ -203,17 +168,31 @@ uint8_t * LedCube::cubeToCharAlloc(void)
   return cubeCharsP;
 }
 
-//this is a little inefficient, but it's better to have two copies than deal with mutex management right now.
-
+//This is a little inefficient, but it's better to have two copies than deal with mutex management right now.
+//Also, may want to just overload = operator...
 int LedCube::cubeToCube(LedCube * cubeP)
 {
   uint8_t buffer[PACKETSIZE];
+  if (cubeP == NULL) {
+    return 1;
+  }
   cubeToChar(buffer);
-
   cubeP->receiveCube(buffer);
   return 0;
 }
 
+// default speeds should be human-visible
+int LedCube::setSpeed(int newSpeed)
+{
+  int oldSpeed = m_speed;
+  m_speed = newSpeed;
+  return oldSpeed;
+}
+
+int LedCube::getSpeed()
+{
+  return m_speed;
+}
 
 // just write to serial port "/dev/ttyUSB1" instead of file to send this to serial port
 int LedCube::cubeToFile(const char * filename)

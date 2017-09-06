@@ -22,6 +22,8 @@ class SolveCube : public LedCube {
   char m_box[5][5][5] = {{{DEFVAL}}};
 };
 
+extern SolveCube * mySolveCubeP;
+
 void * mainsolve(void * ptr);
 
 #endif //_H_SOLVE55

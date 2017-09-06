@@ -19,19 +19,20 @@ int a[3]={10,10,10}, b[3]={10,-10,10},
 float angle=1.0;
 double transfat = 0.25;
 GLCube * myGLCubeP = NULL;
-float rot_z_vel = 0.1;
-float rot_y_vel = 0.0;
+float rot_z_vel = 0.0;
+float rot_y_vel = 0.1;
 float rot_x_vel = 0.0;
 
 void GLCube::drawSpheres(void)
 {
   int x, y, z;
-  /*
-  glPushMatrix();
-  glTranslated(0.0,1.2,-6);
-  glutSolidSphere(1,50,50);
-  glPopMatrix(); 
-  */
+  
+  if (m_speed != GLMAXSPEED) {
+      usleep (100*(GLMAXSPEED - m_speed));
+  }
+
+  pthread_mutex_lock( &m_mutex);
+
   glMatrixMode(GL_PROJECTION);
   //glLoadIdentity();
   glPushMatrix();
@@ -44,13 +45,13 @@ void GLCube::drawSpheres(void)
       for (x = 0; x < CUBESIZE; x++) {
 	glTranslated(transfat, 0, 0);
 	if (m_cube[x][y][z] == CUBEON) {
-	  glColor3d(1,.2,.3);
-	  glutSolidSphere(.04,20,20);
+	  glColor3d(1,0,0);
+	  glutSolidSphere(.04,15,15);
 	}
 	else {
 	  glColor3d(.1,0,.3);
 	  //	  glColor3d(0,0,1);
-	  glutWireSphere(.03,10,10);
+	  glutWireSphere(.03,7,7);
 	}
       }
       glTranslated(-CUBESIZE * transfat ,0,0);
@@ -58,11 +59,21 @@ void GLCube::drawSpheres(void)
     glTranslated(0, -CUBESIZE * transfat, 0);
   }
   glPopMatrix(); 
+  pthread_mutex_unlock( &m_mutex);
+
+}
+
+int GLCube::setSpeed(int speed)
+{
+  if (speed > GLMAXSPEED || speed < GLMINSPEED) {
+    return GLDEFSPEED;
+  }
+  m_speed = speed;
+  return speed;
 }
 
 void RotateCube(void) {
     glMatrixMode(GL_PROJECTION);
-    //glLoadIdentity();
 
     glTranslated(0,0, -CUBESIZE/3.0);
     glRotatef(rot_x_vel, 1.0, 0.0, 0.0);
@@ -70,34 +81,13 @@ void RotateCube(void) {
     glTranslated(0,0, CUBESIZE/3.0);
     glRotatef(rot_z_vel, 0.0, 0.0, 1.0);
 
-
-  //  glMultMatrixf(rotation_matrix);
-  //  glGetFloatv(GL_MODELVIEW_MATRIX, rotation_matrix); }
 } 
 
 void display(void)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glColor3f(1.0, 1.0, 1.0);
-  usleep (1000);
   RotateCube();
-  /*  glMatrixMode(GL_MODELVIEW);
-  glRotatef(angle, 0.0, 1.0, 0.0);
-  glutWireCube(20);
-
-  glFlush();
-  glutSwapBuffers();
-
-  glPushMatrix();
-  glTranslated(0.0,1.2,-6);
-  glutSolidSphere(1,50,50);
-  glPopMatrix(); 
-
-  glPushMatrix();
-  glTranslated(0.0,-1.2,-6);
-  glutWireSphere(1,16,16);
-  glPopMatrix(); 
-  */
   myGLCubeP->drawSpheres();
   glutSwapBuffers();
 
@@ -140,6 +130,12 @@ void keyboard(unsigned char key, int x, int y)
     case ',':
       rot_x_vel -= 0.1;
       break;  
+    case '-':
+      myGLCubeP->setSpeed(myGLCubeP->getSpeed() + 1);
+      break;  
+    case '+':
+      myGLCubeP->setSpeed(myGLCubeP->getSpeed() - 1);
+      break;  
     case 0x1B:
     case 'q':
     case 'Q':
@@ -163,6 +159,7 @@ void mouse(int btn, int state, int x, int y)
 
 
 GLCube::GLCube() : LedCube(){
+  m_speed = GLDEFSPEED;
   return;
 }
 
