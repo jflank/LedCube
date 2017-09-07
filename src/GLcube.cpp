@@ -11,27 +11,32 @@
 #include "GL/freeglut.h"
 #include <unistd.h>
 
+#define WINDOWX 640
+#define WINDOWY 640
+
 int a[3]={10,10,10}, b[3]={10,-10,10},
   c[3]={-10,-10,10}, d[3]={-10,10,10},
   e[3]={10,10,-10}, f[3]={10,-10,-10},
   g[3]={-10,-10,-10}, h[3]={-10,10,-10};
 
-float angle=1.0;
 double transfat = 0.25;
 GLCube * myGLCubeP = NULL;
+
 float rot_z_vel = 0.0;
-float rot_y_vel = 0.1;
+float rot_y_vel = 0.0;
+//float rot_y_vel = 0.1;
 float rot_x_vel = 0.0;
 
 void GLCube::drawSpheres(void)
 {
   int x, y, z;
   
-  if (m_speed != GLMAXSPEED) {
+  if (m_speed != GLMAXSPEED ) {
       usleep (100*(GLMAXSPEED - m_speed));
   }
 
   pthread_mutex_lock( &m_mutex);
+
 
   glMatrixMode(GL_PROJECTION);
   //glLoadIdentity();
@@ -47,8 +52,12 @@ void GLCube::drawSpheres(void)
 	if (m_cube[x][y][z] == CUBEON) {
 	  glColor3d(1,0,0);
 	  glutSolidSphere(.04,15,15);
-	}
-	else {
+	} else if (m_cube[x][y][z] != CUBEOFF) {
+	  rgb_t rgb;
+	  rgb.word = m_cube[x][y][z];
+	  glColor3b(rgb.color.red,rgb.color.green,rgb.color.blue);
+	  glutSolidSphere(.04,15,15);	  
+	} else {
 	  glColor3d(.1,0,.3);
 	  //	  glColor3d(0,0,1);
 	  glutWireSphere(.03,7,7);
@@ -135,7 +144,26 @@ void keyboard(unsigned char key, int x, int y)
       break;  
     case '+':
       myGLCubeP->setSpeed(myGLCubeP->getSpeed() - 1);
-      break;  
+      break;
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+        myGLCubeP->set(x*CUBESIZE/WINDOWX,7-y*CUBESIZE/WINDOWY,key-'1', CUBEON);
+      break;
+    case ' ':
+      myGLCubeP->clear();
+      break;
+    case 'p':
+      myGLCubeP->cubeToFile("GLCUBE.bin");
+      break;
+    case 's':
+      myGLCubeP->cubeToSerial(); //serial not implemented yet
+      break;
     case 0x1B:
     case 'q':
     case 'Q':
@@ -149,17 +177,15 @@ void mouse(int btn, int state, int x, int y)
   if (state == GLUT_DOWN)
     {
       if (btn == GLUT_LEFT_BUTTON)
-	angle = angle + 1.0f;
+	rot_y_vel -= 0.1;
       else if (btn == GLUT_RIGHT_BUTTON)
-	angle = angle - 1.0f;
-      else
-	angle = 0.0f;
+	rot_y_vel += 0.1;
     }
 }
 
 
 GLCube::GLCube() : LedCube(){
-  m_speed = GLDEFSPEED;
+  m_speed = GLMAXSPEED;
   return;
 }
 
@@ -188,13 +214,13 @@ void * mainGL(void * ptr)
   myGLCubeP->set(0,0,7, CUBEON);
 
   glutInit(&argc, argv);
-  glutInitWindowSize(640, 480);
+  glutInitWindowSize(WINDOWX, WINDOWY);
   glutInitWindowPosition(10,10);
   
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
   glutCreateWindow("GL Cube");
 
-  //  glutMouseFunc(mouse);
+  glutMouseFunc(mouse);
   glutKeyboardFunc(keyboard);
   glutDisplayFunc(display);
   glutIdleFunc(display);
@@ -210,7 +236,7 @@ void * mainGL(void * ptr)
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(0.0f, 640, 480, 0.0f, 0.0f, 1.0f);
+  glOrtho(0.0f, WINDOWX, WINDOWY, 0.0f, 0.0f, 1.0f);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK); 
 

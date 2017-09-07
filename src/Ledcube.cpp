@@ -39,15 +39,14 @@ LedCube::LedCube(const LedCube &obj)
 
 }
 */
-
-
+/* only works in monochrome */
 int LedCube::drawCube() {
   int x,y,z;
   pthread_mutex_lock( &m_mutex );
   for (z = 0; z < CUBESIZE; z ++) {
     for (y = 0; y < CUBESIZE; y ++) {
       for (x = 0; x < CUBESIZE; x ++) {
-	printf("%1x", m_cube[x][y][z]);
+	cout << (m_cube[x][y][z] > 0 ? "1":"0");
       }
       cout  << " ";
     }
@@ -64,7 +63,7 @@ int LedCube::init()
   for (x = 0; x < CUBESIZE; x ++) {
     for (y = 0; y < CUBESIZE; y ++) {
       for (z = 0; z < CUBESIZE; z ++) {
-	m_cube[x][y][z] = 0;
+	m_cube[x][y][z] = CUBEOFF;
       }
     }
   }
@@ -72,28 +71,43 @@ int LedCube::init()
   return 0;
 }
 
-int LedCube::set(int x, int y, int z, int val)
+/*
+  if invalid coordinates, assert, or just return 0;
+*/
+int LedCube::set(int x, int y, int z, uint32_t val)
 {
   if (x >= CUBESIZE || x < 0 ||
       y >= CUBESIZE || y < 0 ||
       z >= CUBESIZE || z < 0) {
     assert(0);
-    return -1;
+    return 0;
   }
   pthread_mutex_lock( &m_mutex);
   m_cube[x][y][z] = val;
   pthread_mutex_unlock( &m_mutex);
   return 0;
 }
-
-int LedCube::get(int x, int y, int z)
+/*
+ *  if invalid coordinates, assert, or just return 0;
+ */
+uint32_t LedCube::get(int x, int y, int z)
 {
-  return m_cube[x][y][z];
+  if (x >= CUBESIZE || x < 0 ||
+      y >= CUBESIZE || y < 0 ||
+      z >= CUBESIZE || z < 0) {
+    assert(0);
+    return 0;
+  }
+  pthread_mutex_lock( &m_mutex);
+  uint32_t ret = m_cube[x][y][z];
+  pthread_mutex_unlock( &m_mutex);
+  return ret;
 }
 
-//
-// Receive a cube the same as if it was on the led
-// this only works with an 8x8x8 cube right now.
+/*
+ * Receive a cube the same as if it was on the monochrome led
+ * this only works with an 8x8x8 cube right now.
+ */
 int LedCube::receiveCube(uint8_t * cache)
 {
   if (cache == 0) {
@@ -111,7 +125,7 @@ int LedCube::receiveCube(uint8_t * cache)
     for (int y = 0; y < CUBESIZE; y++) {
       for (int z = 0; z < CUBESIZE; z++) {
 	if ((cache[x+8*y+1] & (0x01 << z))) {
-	  m_cube[x][y][z] = 1;
+	  m_cube[x][y][z] = CUBEON;
 	}
       }
     }
@@ -130,6 +144,27 @@ int LedCube::receiveCube(uint8_t * cache)
   return 0;
 }
 
+/*
+ * color version, without any headers
+ */
+int LedCube::receiveColorCube(uint32_t * cache)
+{
+  if (cache == 0) {
+    return -1;
+  }
+
+  pthread_mutex_lock( &m_mutex);
+
+  memcpy(m_cube, cache, COLORPACKETSIZE);
+
+  pthread_mutex_unlock( &m_mutex);
+  return 0;
+}
+
+
+/*
+ * print out the monochrome byte stream
+ */
 void coutpackage(const uint8_t * data, int data_length)
 {
   for(int i=0; i<data_length; ++i) {
@@ -139,8 +174,10 @@ void coutpackage(const uint8_t * data, int data_length)
  
 }
 
-/* change to byte[] */
-uint8_t * LedCube::cubeToChar     (uint8_t * cache)
+/* 
+ * change to monochrome byte stream 
+ */
+uint8_t * LedCube::cubeToChar      (uint8_t * cache)
 {
   memset(cache, 0x00, PACKETSIZE);
 
@@ -151,12 +188,29 @@ uint8_t * LedCube::cubeToChar     (uint8_t * cache)
   for (int x = 0; x < CUBESIZE; x++) {
     for (int y = 0; y < CUBESIZE; y++) {
       for (int z = 0; z < CUBESIZE; z++) {
-	if (m_cube[x][y][z] == 1) {
+	if (m_cube[x][y][z] > 0) { 
 	  cache[x+8*y+1] |= 0x01 << z;
 	}
       }
     }
   }
+  pthread_mutex_unlock( &m_mutex);
+  return cache;
+}
+
+/* 
+ * change to uint32_t byte stream without a header
+ */
+uint32_t * LedCube::cubeToColorChar   (uint32_t * cache)
+{
+  if (cache == NULL) {
+    return NULL;
+  }
+
+  pthread_mutex_lock( &m_mutex);
+
+  memcpy(cache, m_cube, COLORPACKETSIZE);
+
   pthread_mutex_unlock( &m_mutex);
   return cache;
 }
@@ -168,16 +222,22 @@ uint8_t * LedCube::cubeToCharAlloc(void)
   return cubeCharsP;
 }
 
-//This is a little inefficient, but it's better to have two copies than deal with mutex management right now.
-//Also, may want to just overload = operator...
+/*
+ * This is a little inefficient, but it's better to have two copies than deal 
+ * with mutex management right now.
+ * Also, may want to just overload = operator...
+ *
+ * This should work with monochrome and color, as long as the byte string is 
+ * set correctly.
+ */
 int LedCube::cubeToCube(LedCube * cubeP)
 {
-  uint8_t buffer[PACKETSIZE];
+  uint32_t buffer[PACKETSIZE*CUBESIZE];
   if (cubeP == NULL) {
     return 1;
   }
-  cubeToChar(buffer);
-  cubeP->receiveCube(buffer);
+  cubeToColorChar        (buffer);
+  cubeP->receiveColorCube(buffer);
   return 0;
 }
 
@@ -194,10 +254,16 @@ int LedCube::getSpeed()
   return m_speed;
 }
 
-// just write to serial port "/dev/ttyUSB1" instead of file to send this to serial port
+/* 
+ * Just write to serial port "/dev/ttyUSB1" instead of file to send this to 
+ * serial port.
+ */
 int LedCube::cubeToFile(const char * filename)
 {
    ofstream outfile;
+   if (filename == NULL) {
+     return 1;
+   }
    outfile.open(filename, ios::out | ios::binary);
    uint8_t buffer[PACKETSIZE];
    cubeToChar(buffer);

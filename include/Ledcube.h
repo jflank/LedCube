@@ -6,6 +6,16 @@
 #include <iostream>
 #include <cstdint>
 
+typedef union {
+  struct {
+    uint8_t  blue;
+    uint8_t  green;
+    uint8_t  red;
+  } color;
+  uint32_t word;
+  uint8_t  byte[3];
+} rgb_t;
+
 /*
   The copy constructor will just copy all protected data.
 */
@@ -13,8 +23,6 @@
 #define CUBESIZE 8
 #define CUBEON   1
 #define CUBEOFF  0
-
-#define PACKETSIZE (CUBESIZE * CUBESIZE +1)
 
 using namespace std;
 
@@ -26,16 +34,19 @@ class LedCube
   //  LedCube() ( const LedCube &obj);  // copy constructor
 
   int init();
-  int set(int x, int y, int z, int val);
-  int get(int x, int y, int z);
+  int set(int x, int y, int z, uint32_t val);
+  uint32_t get(int x, int y, int z);
 
-  int receiveCube(uint8_t * cubeCharsP); //first byte must be 0xF2
+  int receiveCube     (uint8_t * cubeCharsP); //first byte must be 0xF2
+  int receiveColorCube(uint32_t * bufferP); //first byte must be 0xF2
 
   uint8_t * cubeToCharAlloc(void ); //allocates the array for you.
-  uint8_t * cubeToChar(uint8_t * cubeCharsP); //cubeCharsP must be pre-allocated to 65 bytes
-  int cubeToFile(const char*  filename);
+  uint8_t * cubeToChar     (uint8_t * cubeCharsP); //cubeCharsP must be pre-allocated to 65 bytes
+  uint32_t * cubeToColorChar (uint32_t * bufferP); 
+  int cubeToCube             (LedCube * cubeP); //just a couple of memcpy's
+
+  int cubeToFile  (const char*  filename);
   int cubeToSerial(); // just calls cubetoFile with the serial port string
-  int cubeToCube(LedCube * cubeP);
 
   int clear();
 	      
@@ -47,8 +58,12 @@ class LedCube
  private:
 
  protected:
-  int             m_cube[CUBESIZE][CUBESIZE][CUBESIZE];
+  static const     int PACKETSIZE = (CUBESIZE * CUBESIZE + 1); //only need n^2 bytes
+  static const     int COLORPACKETSIZE = (CUBESIZE * CUBESIZE * CUBESIZE *sizeof(uint32_t)); 
+  uint32_t         m_cube[CUBESIZE][CUBESIZE][CUBESIZE];
   pthread_mutex_t m_mutex;
   int             m_speed;
 };
+
+
 #endif //_H_LEDCUBE

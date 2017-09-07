@@ -105,10 +105,20 @@ int SolveCube::shareBox()
   pthread_mutex_lock( &m_mutex);
   int x,y,z;
   //  printf ("----------------------\n");  
-  for (z = 0; z < 5; z ++){
-    for (y = 0; y < 5; y ++){
-      for (x = 0; x < 5; x ++){
-	m_cube[x][y][z] = m_box[x][y][z] == DEFVAL ? 0 : 1;
+  for (z = 0; z < 5; z ++) {
+    for (y = 0; y < 5; y ++) {
+      for (x = 0; x < 5; x ++) {
+	if (m_box[x][y][z] == DEFVAL) {
+	  m_cube[x][y][z] = 0;
+	} else {
+	  rgb_t rgb;
+	  rgb.word = 0;
+	  rgb.color.red = 100;
+	  rgb.color.green = 10 * (m_box[x][y][z] - BASEWORM);
+	  rgb.color.blue =  (m_box[x][y][z] - BASEWORM) % 2 ? 100 : 0;
+	  // :) convenient that there are 255 colors, and 25 worms... AND 26 chars!
+	  m_cube[x][y][z] = rgb.word;
+	}
       }
     }
   }
@@ -224,15 +234,15 @@ int SolveCube::solver(int wormID)
       for (x = 0; x < 5; x ++) {
 	if (m_box[x][y][z] == DEFVAL) {
 	  for (trial = 0; directions[trial][0] != '\0'; trial ++) {
-	    if (addWorm(x,y,z, wormID + 'A', trial, 0) == 1) {
-	      addWorm(x,y,z, wormID + 'A', trial, 1);
+	    if (addWorm(x,y,z, wormID + BASEWORM, trial, 0) == 1) {
+	      addWorm(x,y,z, wormID + BASEWORM, trial, 1);
 	      continue;
 	    }
 
 	    if (solver(wormID + 1) == 0)
 	      return 0;
 	    
-	    addWorm(x,y,z, wormID + 'A', trial, 1);  
+	    addWorm(x,y,z, wormID + BASEWORM, trial, 1);  
 	  }
 	  return 1;
 	}
