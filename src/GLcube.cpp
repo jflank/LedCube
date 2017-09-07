@@ -27,6 +27,8 @@ float rot_y_vel = 0.0;
 //float rot_y_vel = 0.1;
 float rot_x_vel = 0.0;
 
+float sphereSize = 0.04;
+
 void GLCube::drawSpheres(void)
 {
   int x, y, z;
@@ -51,12 +53,12 @@ void GLCube::drawSpheres(void)
 	glTranslated(transfat, 0, 0);
 	if (m_cube[x][y][z] == CUBEON) {
 	  glColor3d(1,0,0);
-	  glutSolidSphere(.04,15,15);
+	  glutSolidSphere(sphereSize,15,15);
 	} else if (m_cube[x][y][z] != CUBEOFF) {
 	  rgb_t rgb;
 	  rgb.word = m_cube[x][y][z];
 	  glColor3b(rgb.color.red,rgb.color.green,rgb.color.blue);
-	  glutSolidSphere(.04,15,15);	  
+	  glutSolidSphere(sphereSize,15,15);	  
 	} else {
 	  glColor3d(.1,0,.3);
 	  //	  glColor3d(0,0,1);
@@ -140,10 +142,12 @@ void keyboard(unsigned char key, int x, int y)
       rot_x_vel -= 0.1;
       break;  
     case '-':
-      myGLCubeP->setSpeed(myGLCubeP->getSpeed() + 1);
+      sphereSize -= 0.01;
+      //      myGLCubeP->setSpeed(myGLCubeP->getSpeed() + 1);
       break;  
-    case '+':
-      myGLCubeP->setSpeed(myGLCubeP->getSpeed() - 1);
+    case '=':
+      sphereSize += 0.01;
+      //      myGLCubeP->setSpeed(myGLCubeP->getSpeed() - 1);
       break;
     case '1':
     case '2':
