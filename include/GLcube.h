@@ -7,6 +7,9 @@
 #define GLDEFSPEED 900
 #define GLMINSPEED 1
 
+// 8 pixels - the distance from pixel0 to pixel7 is 1/(cubesize-1)
+static const double CUBEPIXELDIST = (CUBESIZE-1);
+
 class GLCube : public LedCube {
  public:
   GLCube();
@@ -18,6 +21,7 @@ class GLCube : public LedCube {
  private:
 
  protected:
+  
   
 };
 

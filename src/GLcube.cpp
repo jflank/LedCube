@@ -10,14 +10,12 @@
 #include <GL/glut.h>
 #include "GL/freeglut.h"
 #include <unistd.h>
+#include "easylogging++.h"
+#include <iomanip>
+#include "math.h"
 
 #define WINDOWX 640
 #define WINDOWY 640
-
-int a[3]={10,10,10}, b[3]={10,-10,10},
-  c[3]={-10,-10,10}, d[3]={-10,10,10},
-  e[3]={10,10,-10}, f[3]={10,-10,-10},
-  g[3]={-10,-10,-10}, h[3]={-10,10,-10};
 
 double transfat = 0.25;
 GLCube * myGLCubeP = NULL;
@@ -28,6 +26,8 @@ float rot_y_vel = 0.0;
 float rot_x_vel = 0.0;
 
 float sphereSize = 0.04;
+
+#define DEBUGLOG 0
 
 void GLCube::drawSpheres(void)
 {
@@ -40,11 +40,9 @@ void GLCube::drawSpheres(void)
   pthread_mutex_lock( &m_mutex);
 
 
-  glMatrixMode(GL_PROJECTION);
-  //glLoadIdentity();
   glPushMatrix();
-  glTranslated(-1.0-1.0/CUBESIZE,-1.0-1.0/CUBESIZE, -CUBESIZE/2.0);
-  //  glTranslated(0.0,- CUBESIZE, -CUBESIZE);
+  glTranslated(-1-1.0/CUBESIZE,-1.0-1.0/CUBESIZE, -36.0/CUBESIZE);
+
   for (z = 0; z < CUBESIZE; z++) {
     glTranslated(0,0, transfat);
     for (y = 0; y < CUBESIZE; y++) {
@@ -84,14 +82,15 @@ int GLCube::setSpeed(int speed)
 }
 
 void RotateCube(void) {
-    glMatrixMode(GL_PROJECTION);
 
-    glTranslated(0,0, -CUBESIZE/3.0);
-    glRotatef(rot_x_vel, 1.0, 0.0, 0.0);
-    glRotatef(rot_y_vel, 0.0, 1.0, 0.0);
-    glTranslated(0,0, CUBESIZE/3.0);
-    glRotatef(rot_z_vel, 0.0, 0.0, 1.0);
+  glMatrixMode(GL_PROJECTION);
 
+  glTranslated(0,0, -27.0/CUBESIZE);
+  glRotatef(rot_x_vel, 1.0, 0.0, 0.0);
+  glRotatef(rot_y_vel, 0.0, 1.0, 0.0);
+  glTranslated(0,0, 27.0/CUBESIZE);
+  glRotatef(rot_z_vel, 0.0, 0.0, 1.0);
+  
 } 
 
 void display(void)
@@ -100,8 +99,8 @@ void display(void)
   glColor3f(1.0, 1.0, 1.0);
   RotateCube();
   myGLCubeP->drawSpheres();
-  glutSwapBuffers();
 
+  glutSwapBuffers();
   
 }
 
@@ -176,12 +175,87 @@ void keyboard(unsigned char key, int x, int y)
     }
 }
 
+
+/*
+ * Turn on LED's by clicking on them. Ideally this should work in 3d, even when rotating the GLcube. The 3d part of this is a bit complicated, but at least this is a good start.
+ */
+void clickLED(int mouseX, int mouseY)
+{
+  double matModelView[16], matProjection[16]; 
+  int viewport[4];
+  double wx, wy, wz;
+  double wx1,wy1,wz1;
+  double wx2,wy2,wz2;
+
+  LOG_IF(DEBUGLOG, DEBUG) << "Clicking on nearest LED to " << mouseX << "," << mouseY;
+
+  // get matrix and viewport:
+  glGetDoublev( GL_MODELVIEW_MATRIX, matModelView ); 
+  glGetDoublev( GL_PROJECTION_MATRIX, matProjection ); 
+  glGetIntegerv( GL_VIEWPORT, viewport ); 
+
+  // window pos of mouse, Y is inverted on Windows
+  double winX = (double)mouseX; 
+  double winY = viewport[3] - (double)mouseY; 
+  
+  // get point on the 'near' plane (third param is set to 0.0)
+  gluUnProject(winX, winY, 0.0, matModelView, matProjection, 
+	       viewport, &wx1, &wy1, &wz1); 
+
+  // get point on the 'far' plane (third param is set to 1.0)
+  gluUnProject(winX, winY, 36.0, matModelView, matProjection, 
+	       viewport, &wx2, &wy2, &wz2); 
+
+  // now you can create a ray from m_start to m_end
+  LOG_IF(DEBUGLOG, DEBUG) << std::fixed << std::setprecision(4) << "Ray from " << wx1 << "," << wy1 << "," <<wz1;
+
+
+  int bestz = 0;
+  int besty = 0;
+  int bestx = 0;
+  float bestdist = 10000; //pick a large number.
+  float curdist;
+  float dx =(0.40+0.40)/CUBEPIXELDIST; //(-4 to 4), -7 to 7
+  float dy = dx; //dy and dx are the same right now.
+  float dz = (.06+2)/CUBEPIXELDIST; // (from -2 to .06)
+
+    
+  //right now this is only calculated for default 640x640 window.
+  wz = -2.0; // to .06
+
+  for (int z = 0; z < CUBESIZE; z++) {
+    wy = -0.4031 - z*0.30/7;
+    for (int y = 0; y < CUBESIZE; y++) {
+      wx = -0.4031 - z*0.30/7;
+      for (int x = 0; x < CUBESIZE; x++) {
+	float p = (wx-wx1)*(wx-wx1)+(wy-wy1)*(wy-wy1);
+	  //	long double p = (dis12+dis2p+dis1p)/2;	
+	if (p < bestdist) {
+	  LOG_IF(DEBUGLOG, DEBUG) << std::fixed << std::setprecision(4) <<
+	    "Ray from " << wx << "," << wy << ":" << bestdist << ":" <<x <<","<<y<<","<<z;
+	  bestdist = p;
+	  bestx = x;
+	  besty = y;
+	  bestz = z;
+	}
+	wx += dx;
+      }
+      wy += dy;
+    }
+    dx = dx + 0.6/(CUBEPIXELDIST * CUBEPIXELDIST);
+    dy = dy + 0.6/(CUBEPIXELDIST * CUBEPIXELDIST);
+  }
+  myGLCubeP->set(bestx,besty,bestz, CUBEON);
+}
+      
 void mouse(int btn, int state, int x, int y)
 {
   if (state == GLUT_DOWN)
     {
-      if (btn == GLUT_LEFT_BUTTON)
-	rot_y_vel -= 0.1;
+      if (btn == GLUT_LEFT_BUTTON) {
+	clickLED(x, y);
+	//	rot_y_vel -= 0.1;
+      }
       else if (btn == GLUT_RIGHT_BUTTON)
 	rot_y_vel += 0.1;
     }
@@ -212,10 +286,10 @@ void * mainGL(void * ptr)
 
   myGLCubeP = new GLCube();
 
-  myGLCubeP->set(0,0,0, CUBEON);
-  myGLCubeP->set(1,0,0, CUBEON);
-  myGLCubeP->set(1,7,0, CUBEON);
-  myGLCubeP->set(0,0,7, CUBEON);
+  //myGLCubeP->set(0,0,0, CUBEON);
+  //myGLCubeP->set(1,0,0, CUBEON);
+  //myGLCubeP->set(0,7,0, CUBEON);
+    myGLCubeP->set(0,0,7, CUBEON);
 
   glutInit(&argc, argv);
   glutInitWindowSize(WINDOWX, WINDOWY);
@@ -229,14 +303,6 @@ void * mainGL(void * ptr)
   glutDisplayFunc(display);
   glutIdleFunc(display);
   glutReshapeFunc(resize);
-
-  /*
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  */
-  //  glRotatef(30.0, 1.0, 0.0, 0.0);
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();

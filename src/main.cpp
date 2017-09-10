@@ -3,6 +3,7 @@
  * September 2017
  * Shows off the LED cube. This also solves the 5x5x5 Z cube puzzle
  */
+#include "easylogging++.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,8 @@
 #include "Ledcube.h"
 #include "GLcube.h"
 #include "Solve5x5.h"
+
+INITIALIZE_EASYLOGGINGPP
 
 using namespace std;
 
@@ -53,7 +56,10 @@ int main(int argc, char *argv[])
 
   opterr = 0;
 
-    
+  el::Configurations conf("./log.conf");
+  el::Loggers::reconfigureAllLoggers(conf);
+
+  LOG(INFO) << "Starting" ;
   while ((c = getopt (argc, argv, "gstpa:")) != -1) {
     switch (c) {
     case 'g':

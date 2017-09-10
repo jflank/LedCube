@@ -115,7 +115,7 @@ int SolveCube::shareBox()
 	  rgb.word = 0;
 	  rgb.color.red = 100;
 	  rgb.color.green = 10 * (m_box[x][y][z] - BASEWORM);
-	  rgb.color.blue =  (m_box[x][y][z] - BASEWORM) % 2 ? 100 : 0;
+	  rgb.color.blue =   50 *((m_box[x][y][z] - BASEWORM) % 3) ;
 	  // :) convenient that there are 255 colors, and 25 worms... AND 26 chars!
 	  m_cube[x][y][z] = rgb.word;
 	}
