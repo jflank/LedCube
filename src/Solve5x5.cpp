@@ -100,8 +100,12 @@ int SolveCube::printBox()
   return 0;
 }
 
+/*
+ * copy from m_box to m_cube, in preparation to copy to another cube.
+ */
 int SolveCube::shareBox()
 {
+  int move = 1;
   pthread_mutex_lock( &m_mutex);
   int x,y,z;
   //  printf ("----------------------\n");  
@@ -109,15 +113,20 @@ int SolveCube::shareBox()
     for (y = 0; y < 5; y ++) {
       for (x = 0; x < 5; x ++) {
 	if (m_box[x][y][z] == DEFVAL) {
-	  m_cube[x][y][z] = 0;
+	  m_cube[x+move][y+move][z+move] = 0;
 	} else {
 	  rgb_t rgb;
 	  rgb.word = 0;
-	  rgb.color.red = 100;
-	  rgb.color.green = 10 * (m_box[x][y][z] - BASEWORM);
+	  if (m_box[x][y][z] % 2 == 0) {
+	    rgb.color.green = 100;
+	    rgb.color.red = 10 * (m_box[x][y][z] - BASEWORM);
+	  } else {
+	    rgb.color.red = 100;
+	    rgb.color.green = 10 * (m_box[x][y][z] - BASEWORM);
+	  }	    
 	  rgb.color.blue =   50 *((m_box[x][y][z] - BASEWORM) % 3) ;
 	  // :) convenient that there are 255 colors, and 25 worms... AND 26 chars!
-	  m_cube[x][y][z] = rgb.word;
+	  m_cube[x+move][y+move][z+move] = rgb.word;
 	}
       }
     }
@@ -207,6 +216,7 @@ int SolveCube::solver(int wormID)
   if (m_speed > 0 && m_speed < 1000000) {
     usleep(1000000 - m_speed);
     shareBox();
+    printBox();
     cubeToCube(myGLCubeP); // this may do nothing if GLcube wasn't created.
     cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
   }
