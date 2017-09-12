@@ -13,12 +13,12 @@
 #include "easylogging++.h"
 #include <iomanip>
 #include "math.h"
+#include "Serialcube.h"
 
 #define WINDOWX 640
 #define WINDOWY 640
 
 double transfat = 0.25;
-GLCube * myGLCubeP = NULL;
 
 float rot_z_vel = 0.0;
 float rot_y_vel = 0.0;
@@ -165,7 +165,7 @@ void keyboard(unsigned char key, int x, int y)
       myGLCubeP->cubeToFile("GLCUBE.bin");
       break;
     case 's':
-      myGLCubeP->cubeToSerial(); //serial not implemented yet
+      myGLCubeP->cubeToCube(myPortCubeP); // this may do nothing if Portcube wasn't created.
       break;
     case 0x1B:
     case 'q':

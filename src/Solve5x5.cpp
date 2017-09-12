@@ -218,7 +218,6 @@ int SolveCube::solver(int wormID)
     cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
     //      printBox(); //jhf test
     //      drawCube();
-    //      myGLCubeP->drawCube();
   }
 
   numiter2 ++;

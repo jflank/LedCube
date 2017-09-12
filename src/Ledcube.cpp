@@ -255,8 +255,7 @@ int LedCube::getSpeed()
 }
 
 /* 
- * Just write to serial port "/dev/ttyUSB1" instead of file to send this to 
- * serial port.
+ * Write cube in binary format to a file.
  */
 int LedCube::cubeToFile(const char * filename)
 {
@@ -270,11 +269,6 @@ int LedCube::cubeToFile(const char * filename)
 
    outfile.write((const char*)buffer, PACKETSIZE);
    return 0;
-}
-
-int LedCube::cubeToSerial()
-{
-  return cubeToFile("/dev/ttyUSB1");
 }
 
 int LedCube::clear()

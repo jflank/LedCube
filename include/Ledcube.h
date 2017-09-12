@@ -46,7 +46,6 @@ class LedCube
   int cubeToCube             (LedCube * cubeP); //just a couple of memcpy's
 
   int cubeToFile  (const char*  filename);
-  int cubeToSerial(); // just calls cubetoFile with the serial port string
 
   int clear();
 	      
