@@ -19,3 +19,37 @@ Options:
 
 Search for "Great Z Cube Wooden Puzzle Brain Teaser" for info on what is being solved.
 
+
+... To program the cube with the programmable firmware...
+joshua:~/Programs/py/stcgal$ sudo ./stcgal.py ../../ledcube8x8x8/firmware/v2/ledcube8.hex 
+Waiting for MCU, please cycle power: done
+Protocol detected: stc12
+Target model:
+  Name: STC12C5A60S2
+  Magic: D17E
+  Code flash: 60.0 KB
+  EEPROM flash: 2.0 KB
+Target frequency: 12.269 MHz
+Target BSL version: 7.1I
+Target options:
+  reset_pin_enabled=True
+  low_voltage_reset=False
+  oscillator_stable_delay=32768
+  por_reset_delay=long
+  clock_gain=high
+  clock_source=external
+  watchdog_por_enabled=False
+  watchdog_stop_idle=True
+  watchdog_prescale=256
+  eeprom_erase_enabled=False
+  bsl_pindetect_enabled=False
+Loading flash: 3806 bytes (Intel HEX)
+Switching to 19200 baud: testing setting done
+Erasing 16 blocks: done
+Writing 4096 bytes: ................................ done
+Finishing write: done
+Setting options: done
+Target UID: D17E013F41E83A
+Disconnected!
+joshua:~/Programs/py/stcgal$ 5~^C
+

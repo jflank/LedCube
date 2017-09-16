@@ -32,27 +32,29 @@ class LedCube
   LedCube();
   ~LedCube();
   //  LedCube() ( const LedCube &obj);  // copy constructor
-
   int init();
-  int set(int x, int y, int z, uint32_t val);
-  uint32_t get(int x, int y, int z);
-
-  int receiveCube     (uint8_t * cubeCharsP); //first byte must be 0xF2
-  int receiveColorCube(uint32_t * bufferP); //first byte must be 0xF2
-
-  uint8_t * cubeToCharAlloc(void ); //allocates the array for you.
-  uint8_t * cubeToChar     (uint8_t * cubeCharsP); //cubeCharsP must be pre-allocated to 65 bytes
-  uint32_t * cubeToColorChar (uint32_t * bufferP); 
-  int cubeToCube             (LedCube * cubeP); //just a couple of memcpy's
-
-  int cubeToFile  (const char*  filename);
-
   int clear();
-	      
   int drawCube();
-  
+
   int setSpeed(int newSpeed); 
   int getSpeed(); 
+
+  int      set             (int x, int y, int z, uint32_t val);
+  uint32_t get             (int x, int y, int z);
+
+  int       receiveByte    (uint8_t * ); //first byte must be 0xF2
+  uint8_t * cubeToByte     (uint8_t * ); //cubeCharsP must be pre-allocated to 65 bytes
+  uint8_t * cubeToByteAlloc(void );      //allocates the array for you.
+  void      coutByte       (const uint8_t * data, int data_length);
+
+
+  int        receiveRGB     (uint32_t * ); //colorized version sends RGB struct. 
+  uint32_t * cubeToRGB       (uint32_t * ); 
+
+
+  int cubeToCube             (LedCube * cubeP); //just a couple of memcpy's
+  int cubeToFile             (const char*  filename);
+
   
  private:
 

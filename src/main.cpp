@@ -32,10 +32,10 @@ static void show_usage()
   cerr << "Usage: " << endl;
   cout << "Options:\n"
        << "\t-h\tShow this help message\n"
-       << "\t-g\tSee The OpenGL threads only\n"
+       << "\t-g\tShow the 8x8x8 cube in OpenGL.\n"
        << "\t-a\tSet the solver speed (-a 1 is around 1 piece per second)\n"
-       << "\t-s\tSee The 5x5 solver in action\n"
-       << "\t-e\tSee The 8 queens solver in action\n"
+       << "\t-s\tShow 5x5 solver\n"
+       << "\t-e\tShow 8 queens solver\n"
        << "\t-p\tSend data over the serial port\n"
        << endl;
 }
@@ -48,7 +48,7 @@ Solve8Cube * my8CubeP     = NULL;
 int main(int argc, char *argv[])
 {
 
-  pthread_t thread1, thread2, thread3;
+  pthread_t thread1, thread2, thread3, thread4;
   int ret;
   int gflag = 0;
   int aflag = 0;
@@ -102,6 +102,10 @@ int main(int argc, char *argv[])
   
   if (pflag) {
     myPortCubeP = new SerialCube();
+    ret = pthread_create( &thread3, NULL, mainSerial, NULL);
+    if (ret != 0) {
+      return 1;
+    }
   }
 	     
   if (eflag) {
@@ -139,16 +143,10 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (pflag) {
-    while (1) {
-      usleep(100000); // sleep for 0.10 seconds
-      myPortCubeP->cubeToSerial();
-    }
-  }
-  
   if (gflag) pthread_join( thread1, NULL);
   if (sflag) pthread_join( thread2, NULL);
   if (eflag) pthread_join( thread3, NULL);
+  if (pflag) pthread_join( thread4, NULL);
 
   return 0;
 

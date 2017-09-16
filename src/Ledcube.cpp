@@ -108,13 +108,13 @@ uint32_t LedCube::get(int x, int y, int z)
  * Receive a cube the same as if it was on the monochrome led
  * this only works with an 8x8x8 cube right now.
  */
-int LedCube::receiveCube(uint8_t * cache)
+int LedCube::receiveByte(uint8_t * buffer)
 {
-  if (cache == 0) {
+  if (buffer == 0) {
     return -1;
   }
 
-  if (cache[0] != 0xF2) { // first byte must be 0xF2 to be read correctly.
+  if (buffer[0] != 0xF2) { // first byte must be 0xF2 to be read correctly.
     return -1;
   }
   pthread_mutex_lock( &m_mutex);
@@ -124,22 +124,12 @@ int LedCube::receiveCube(uint8_t * cache)
   for (int x = 0; x < CUBESIZE; x++) {
     for (int y = 0; y < CUBESIZE; y++) {
       for (int z = 0; z < CUBESIZE; z++) {
-	if ((cache[x+8*y+1] & (0x01 << z))) {
+	if ((buffer[x+8*y+1] & (0x01 << z))) {
 	  m_cube[x][y][z] = CUBEON;
 	}
       }
     }
   }
-  /*
-  int * dot = (int*)m_cube;
-
-  for (int i = 0; i < PACKETSIZE-1; i ++) {
-    int index = i/8;
-    if (cache[index+1] & (0x01 << (i % 8))) {
-      dot[i] = 1;
-    }
-  }
-  */    
   pthread_mutex_unlock( &m_mutex);
   return 0;
 }
@@ -147,7 +137,7 @@ int LedCube::receiveCube(uint8_t * cache)
 /*
  * color version, without any headers
  */
-int LedCube::receiveColorCube(uint32_t * cache)
+int LedCube::receiveRGB(uint32_t * cache)
 {
   if (cache == 0) {
     return -1;
@@ -165,7 +155,7 @@ int LedCube::receiveColorCube(uint32_t * cache)
 /*
  * print out the monochrome byte stream
  */
-void coutpackage(const uint8_t * data, int data_length)
+void LedCube::coutByte(const uint8_t * data, int data_length)
 {
   for(int i=0; i<data_length; ++i) {
     cout <<std::bitset<8>(data[i]);
@@ -174,10 +164,13 @@ void coutpackage(const uint8_t * data, int data_length)
  
 }
 
+// todo: add a registration capability to register cubes to each other, rather 
+// than hard-code it in each file
+
 /* 
  * change to monochrome byte stream 
  */
-uint8_t * LedCube::cubeToChar      (uint8_t * cache)
+uint8_t * LedCube::cubeToByte      (uint8_t * cache)
 {
   memset(cache, 0x00, PACKETSIZE);
 
@@ -201,7 +194,7 @@ uint8_t * LedCube::cubeToChar      (uint8_t * cache)
 /* 
  * change to uint32_t byte stream without a header
  */
-uint32_t * LedCube::cubeToColorChar   (uint32_t * cache)
+uint32_t * LedCube::cubeToRGB   (uint32_t * cache)
 {
   if (cache == NULL) {
     return NULL;
@@ -215,11 +208,11 @@ uint32_t * LedCube::cubeToColorChar   (uint32_t * cache)
   return cache;
 }
 
-uint8_t * LedCube::cubeToCharAlloc(void)
+uint8_t * LedCube::cubeToByteAlloc(void)
 {
-  uint8_t * cubeCharsP = new uint8_t [PACKETSIZE];
-  cubeToChar(cubeCharsP);
-  return cubeCharsP;
+  uint8_t * buffer = new uint8_t [PACKETSIZE];
+  cubeToByte(buffer);
+  return buffer;
 }
 
 /*
@@ -236,8 +229,8 @@ int LedCube::cubeToCube(LedCube * cubeP)
   if (cubeP == NULL) {
     return 1;
   }
-  cubeToColorChar        (buffer);
-  cubeP->receiveColorCube(buffer);
+  cubeToRGB        (buffer);
+  cubeP->receiveRGB(buffer);
   return 0;
 }
 
@@ -265,7 +258,7 @@ int LedCube::cubeToFile(const char * filename)
    }
    outfile.open(filename, ios::out | ios::binary);
    uint8_t buffer[PACKETSIZE];
-   cubeToChar(buffer);
+   cubeToByte(buffer);
 
    outfile.write((const char*)buffer, PACKETSIZE);
    return 0;

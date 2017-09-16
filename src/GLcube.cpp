@@ -13,6 +13,7 @@
 #include "easylogging++.h"
 #include <iomanip>
 #include "math.h"
+//Serialcube shouldn't be necessary once cube registration is allowed.
 #include "Serialcube.h"
 
 #define WINDOWX 640
@@ -179,7 +180,7 @@ void keyboard(unsigned char key, int x, int y)
 /*
  * Turn on LED's by clicking on them. Ideally this should work in 3d, even when rotating the GLcube. The 3d part of this is a bit complicated, but at least this is a good start.
  */
-void clickLED(int mouseX, int mouseY)
+void clickLED(int mouseX, int mouseY, int bOn)
 {
   double matModelView[16], matProjection[16]; 
   int viewport[4];
@@ -245,7 +246,7 @@ void clickLED(int mouseX, int mouseY)
     dx = dx + 0.6/(CUBEPIXELDIST * CUBEPIXELDIST);
     dy = dy + 0.6/(CUBEPIXELDIST * CUBEPIXELDIST);
   }
-  myGLCubeP->set(bestx,besty,bestz, CUBEON);
+  myGLCubeP->set(bestx,besty,bestz, bOn);
 }
       
 void mouse(int btn, int state, int x, int y)
@@ -253,11 +254,14 @@ void mouse(int btn, int state, int x, int y)
   if (state == GLUT_DOWN)
     {
       if (btn == GLUT_LEFT_BUTTON) {
-	clickLED(x, y);
+	clickLED(x, y, CUBEON);
+	myGLCubeP->cubeToCube(myPortCubeP); // this may do nothing if Portcube wasn't created.
 	//	rot_y_vel -= 0.1;
       }
       else if (btn == GLUT_RIGHT_BUTTON)
-	rot_y_vel += 0.1;
+	clickLED(x, y, CUBEOFF);
+	myGLCubeP->cubeToCube(myPortCubeP); // this may do nothing if Portcube wasn't created.
+      //	rot_y_vel += 0.1;
     }
 }
 
