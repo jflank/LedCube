@@ -1,4 +1,7 @@
 # LedCube
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8df80e1f37a340bd932bf18a0832d2a8)](https://www.codacy.com/app/jhflank/LedCube?utm_source=github.com&utm_medium=referral&utm_content=jflank/LedCube&utm_campaign=badger)
+
 Models an 8x8x8 LED cube using OpenGL on linux. Future versions will program the cube via the serial port as well.
 
 There are some commands on the GLcube that are slowly growing.
