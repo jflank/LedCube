@@ -41,7 +41,7 @@ static void show_usage()
 }
 
 SerialCube * myPortCubeP  = NULL;
-SolveCube  * mySolveCubeP = NULL;
+Solve5     * my5CubeP = NULL;
 GLCube     * myGLCubeP    = NULL;
 Solve8Cube * my8CubeP     = NULL;
 
@@ -124,15 +124,15 @@ int main(int argc, char *argv[])
   }
   
   if (sflag) {
-    mySolveCubeP = new SolveCube();
+    my5CubeP = new Solve5();
     if (avalue != NULL) {
       int spd = strtol(avalue, &avalue, 10);
-      mySolveCubeP->setSpeed(spd);
+      my5CubeP->setSpeed(spd);
     }
     if (tflag && gflag == 0) {
       myGLCubeP = new GLCube();
     }
-    ret = pthread_create( &thread2, NULL, mainsolve, NULL);
+    ret = pthread_create( &thread2, NULL, mainsolve5, NULL);
     if (ret != 0) {
       return 1;
     }

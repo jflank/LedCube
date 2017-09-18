@@ -32,9 +32,24 @@ SerialCube::SerialCube() : LedCube()
   return;
 }
 
+SerialCube::~SerialCube() 
+{
+  if (fd > 0) {
+    close(fd);        //close the com port
+  }
+}
+
+
 void signal_handler_IO (int status)
 {
-  LOG(DEBUG) << "received invalid SIGIO signal: " << status ;
+  switch (status) {
+  case SIGIO:
+    // status == 29. I/O now possible. Ready for more data.
+    break;
+  default:
+    LOG(DEBUG) << "received invalid SIGIO signal: " << status ;
+    break;
+  }
 }
 
 /*
@@ -53,20 +68,25 @@ void SerialCube::init()
   PARITYON = 0;
   PARITY   = 0;
 
+  //open the device(com port) to be non-blocking (read will return immediately)
+  fd = open(devicename, O_RDWR | O_NOCTTY | O_NONBLOCK);
+  if (fd < 0) {
+    perror(devicename);
+  }
+
 }
 
 int SerialCube::cubeToSerial()
 {
   uint8_t buffer[PACKETSIZE];
-  int fd;
   struct sigaction saio;               //definition of signal action
   struct termios oldtio, newtio;       //place for old and new port settings for serial port
 
-  //open the device(com port) to be non-blocking (read will return immediately)
-  fd = open(devicename, O_RDWR | O_NOCTTY | O_NONBLOCK);
   if (fd < 0) {
-    perror(devicename);
-    return -1;
+    init();
+    if (fd < 0) {
+      return -1;
+    }
   }
 
   //install the serial handler before making the device asynchronous
@@ -76,7 +96,7 @@ int SerialCube::cubeToSerial()
   saio.sa_restorer = NULL;
   sigaction(SIGIO,&saio,NULL);
 
-    // allow the process to receive SIGIO
+  // allow the process to receive SIGIO
   fcntl(fd, F_SETOWN, getpid());
   // Make the file descriptor asynchronous (the manual page says only
   // O_APPEND and O_NONBLOCK, will work with F_SETFL...)
@@ -105,9 +125,7 @@ int SerialCube::cubeToSerial()
     write(fd,&buffer[i],1);          //write 1 byte to the port
   }
 
-   tcsetattr(fd,TCSANOW,&oldtio);
-
-  close(fd);        //close the com port
+  tcsetattr(fd,TCSANOW,&oldtio);
 
 }
 

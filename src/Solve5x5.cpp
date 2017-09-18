@@ -69,11 +69,16 @@ const char * directions[] =
   };
 
 
-int SolveCube::init()
+int Solve5::init()
 {
   int i,j,k;
   LedCube::init();
-  
+
+  numiter   = 0;
+  totaliter = 0;
+
+  inctotaliter = 1023;
+    
   for (i = 0; i < 5; i ++){
     for (j = 0; j < 5; j ++){
       for (k = 0; k < 5; k ++){
@@ -84,10 +89,10 @@ int SolveCube::init()
   return 0;
 }
 
-int SolveCube::printBox()
+int Solve5::printBox()
 {
   int x,y,z;
-  //  printf ("----------------------\n");  
+  cout << "Total Iterations: " << totaliter << endl;
   for (z = 0; z < 5; z ++){
     for (y = 0; y < 5; y ++){
       for (x = 0; x < 5; x ++){
@@ -102,13 +107,28 @@ int SolveCube::printBox()
 
 /*
  * copy from m_box to m_cube, in preparation to copy to another cube.
+ * save the total iter in binary as well... 
  */
-int SolveCube::shareBox()
+int Solve5::shareBox()
 {
   int move = 1;
   pthread_mutex_lock( &m_mutex);
-  int x,y,z;
-  //  printf ("----------------------\n");  
+  int x = 0, y = 0, z = 0;
+  
+  uint64_t bintotal = totaliter;
+
+  for (z = 0; z < 8 && bintotal > 0; z++) {
+    for (x = 0; x < 8  && bintotal > 0; x ++) {
+      //      cout << bintotal <<" : " << totaliter << endl;
+      if (bintotal & 1) {
+	m_cube[x][7][7-z] = CUBEON;
+      } else {
+	m_cube[x][7][7-z] = CUBEOFF;
+      }
+      bintotal = bintotal >> 1;
+    }
+  }
+  
   for (z = 0; z < 5; z ++) {
     for (y = 0; y < 5; y ++) {
       for (x = 0; x < 5; x ++) {
@@ -135,55 +155,66 @@ int SolveCube::shareBox()
   return 0;
 }
 
-int SolveCube::moveWorm (int *xP, int *yP, int *zP, char val, char dir, int erase) 
+int Solve5::moveWorm (int *xP, int *yP, int *zP, char val, char dir, int erase) 
 {
   switch (dir) {
   case 'u':
     *zP = *zP + 1;
-    if (*zP > 4) return 1;
     break;
   case 'd':
     *zP = *zP - 1;
-    if (*zP < 0) return 1;
     break;
   case 'e':
     *xP = *xP + 1;
-    if (*xP > 4) return 1;
     break;
   case 'w':
     *xP = *xP - 1;
-    if (*xP < 0) return 1;
     break;
   case 'n':
     *yP = *yP + 1;
-    if (*yP > 4) return 1;
     break;
   case 's':
     *yP = *yP - 1;
-    if (*yP < 0) return 1;
     break;
   }
+  if (*xP < 0 || *xP > 4 ||
+      *yP < 0 || *yP > 4 ||
+      *zP < 0 || *zP > 4 ) {
+    return 1;
+  }
+  
+  
   if (m_box[*xP][*yP][*zP] == DEFVAL || m_box[*xP][*yP][*zP] == val) {
     if (erase == 0)
       m_box[*xP][*yP][*zP] = val;
     else 
       m_box[*xP][*yP][*zP] = DEFVAL;
-  } else 
+  } else {
     return 1;
+  }
   return 0;
 }
 
-int SolveCube::addWorm(int x, int y, int z, char val, int trial, int erase)
+int Solve5::addWorm(int x, int y, int z, char val, int trial, int erase)
 {
   int i, x1=x,y1=y,z1=z;
 
+  if (x < 0 || x > 5 ||
+      y < 0 || y > 5 ||
+      z < 0 || z > 5 ||
+      val > 'Z') {
+    //    cout << "invalid variables to addWorm " << x  << y << z << val << endl;
+    return 1;
+  }
+  
   if (erase == 0)
     m_box[x][y][z] = val;
   else
     m_box[x][y][z] = DEFVAL;
 
   for (i = 0; directions[trial][i] != '\0'; i ++ ) {
-    if (moveWorm(&x1, &y1, &z1, val, directions[trial][i], erase) == 1 && erase == 0) {
+    if (moveWorm(&x1, &y1, &z1, val, directions[trial][i], erase) == 1 &&
+	erase == 0) {
       erase = 1;
       break;
     }
@@ -192,15 +223,7 @@ int SolveCube::addWorm(int x, int y, int z, char val, int trial, int erase)
   return erase;
 }
 
-int numiter = 0;
-int totaliter = 0;
-#define inctotaliter 1000
-
-int numiter2 = 0;
-int totaliter2 = 0;
-#define inctotaliter2 1000000
-
-int SolveCube::solver(int wormID)
+int Solve5::solver(int wormID)
 {
   int x,y,z, trial;
 
@@ -208,34 +231,24 @@ int SolveCube::solver(int wormID)
     // done!
     shareBox();
     cubeToCube(myGLCubeP);
-    totaliter = totaliter * inctotaliter + numiter;
-    printf ("totaliter: %d * %d\n", totaliter, inctotaliter);
     return 0;
   }
-  numiter ++;
-  if (m_speed > 0 && m_speed < 1000000) {
-    usleep(1000000 - m_speed);
-    shareBox();
-    printBox();
-    cubeToCube(myGLCubeP); // this may do nothing if GLcube wasn't created.
-    cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
+  
+  // Send to GUI and serial every so often.
+  // Speed up the sending if there's a delay
+  if (m_speed > 0 && m_speed < 1000) { 
+    usleep(1000000 - m_speed * 1000);
+    numiter = inctotaliter;
   }
+  totaliter++;
+  numiter ++; 
+  //  cout << "numiter:\t"<< numiter << " totaliter: " << totaliter << endl; 
   if (numiter >= inctotaliter) {
     numiter = 0;
-    totaliter++;
     shareBox();
+    printBox();
     cubeToCube(myGLCubeP); // this may do nothing if GLcube wasn't created.
     cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
-    //      printBox(); //jhf test
-    //      drawCube();
-  }
-
-  numiter2 ++;
-  if (numiter2 == inctotaliter2) {
-    totaliter2++;
-    printf ("iter: %d * %d\n", totaliter2, inctotaliter2);
-    numiter2 = 0;
-    printBox();
   }
 
   for (z = 0; z < 5; z ++) {
@@ -261,19 +274,19 @@ int SolveCube::solver(int wormID)
   return 1;
 }
 
-SolveCube::SolveCube() : LedCube() {
+Solve5::Solve5() : LedCube() {
   return;
 }
 
 
-void * mainsolve(void * ptr) 
+void * mainsolve5(void * ptr) 
 {
-  cout << "Starting SolveCube\n";
-  mySolveCubeP->init();
-  mySolveCubeP->printBox();
+  cout << "Starting Solve5\n";
+  my5CubeP->init();
+  my5CubeP->printBox();
   
-  mySolveCubeP->solver(0);
-  mySolveCubeP->printBox();
+  my5CubeP->solver(0);
+  my5CubeP->printBox();
   return 0;
 }
 

@@ -23,9 +23,15 @@
 
 using namespace std;
 
-LedCube::LedCube () {
+LedCube::LedCube ()
+{
   m_speed = 0; // default speed is human visible
   init();
+}
+
+LedCube::~LedCube ()
+{
+  //nothing to be done in destructor yet.
 }
 
 /* don't want copy constructor yet

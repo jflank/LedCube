@@ -23,8 +23,7 @@ class SerialCube : public LedCube {
   long STOPBITS;
   long PARITYON;
   long PARITY;  // 00 = NONE, 01 = Odd, 02 = Even, 03 = Mark, 04 = Space
-
- int status;
+  int fd;
  
 };
 
