@@ -22,6 +22,7 @@
 #include "GLcube.h"
 #include "Solve5x5.h"
 #include "Solve8.h"
+#include "AnimCube.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -33,22 +34,24 @@ static void show_usage()
   cout << "Options:\n"
        << "\t-h\tShow this help message\n"
        << "\t-g\tShow the 8x8x8 cube in OpenGL.\n"
-       << "\t-a\tSet the solver speed (-a 1 is around 1 piece per second)\n"
+       << "\t-a #\tSet the solver speed (-a 1 is around 1 piece per second)\n"
        << "\t-s\tShow 5x5 solver\n"
        << "\t-e\tShow 8 queens solver\n"
        << "\t-p\tSend data over the serial port\n"
+       << "\t-z [0-8]\tRun different animations\n"
        << endl;
 }
 
 SerialCube * myPortCubeP  = NULL;
-Solve5     * my5CubeP = NULL;
+Solve5     * my5CubeP     = NULL;
 GLCube     * myGLCubeP    = NULL;
 Solve8Cube * my8CubeP     = NULL;
+AnimCube   * myAnimCubeP  = NULL;
 
 int main(int argc, char *argv[])
 {
 
-  pthread_t thread1, thread2, thread3, thread4;
+  pthread_t thread1, thread2, thread3, thread4, thread5;
   int ret;
   int gflag = 0;
   int aflag = 0;
@@ -56,7 +59,9 @@ int main(int argc, char *argv[])
   int sflag = 0;
   int tflag = 0;
   int pflag = 0;
+  int zflag = 0;
   char *avalue = NULL;
+  char *zvalue = NULL;
   int c;
 
   opterr = 0;
@@ -65,7 +70,7 @@ int main(int argc, char *argv[])
   el::Loggers::reconfigureAllLoggers(conf);
 
   LOG(INFO) << "Starting" ;
-  while ((c = getopt (argc, argv, "egstpa:")) != -1) {
+  while ((c = getopt (argc, argv, "egstpa:z:")) != -1) {
     switch (c) {
     case 'g':
       gflag = 1;
@@ -78,6 +83,9 @@ int main(int argc, char *argv[])
       break;
     case 'a':
       avalue = optarg;
+      break;
+    case 'z':
+      zvalue = optarg;
       break;
     case 't':
       tflag = 1;
@@ -137,7 +145,15 @@ int main(int argc, char *argv[])
       return 1;
     }
   }
-  
+
+  if (zvalue) {
+    myAnimCubeP = new AnimCube();
+    ret = pthread_create( &thread1, NULL, mainAnim, zvalue);
+    if (ret != 0) {
+      return 1;
+    }
+  }
+
   if (aflag) {
     cout << avalue << endl;
     return 1;
@@ -147,6 +163,7 @@ int main(int argc, char *argv[])
   if (sflag) pthread_join( thread2, NULL);
   if (eflag) pthread_join( thread3, NULL);
   if (pflag) pthread_join( thread4, NULL);
+  if (zflag) pthread_join( thread5, NULL);
 
   return 0;
 

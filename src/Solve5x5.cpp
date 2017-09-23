@@ -17,9 +17,10 @@
 #include <X11/Xlib.h>
 #include <errno.h>
 #include "Solve5x5.h"
-#include "GLcube.h"
 
-extern LedCube * myPortCubeP; //declared in main.cpp
+//remove when we can register cubes against each other.
+#include "GLcube.h"
+#include "Serialcube.h"
 
 const char * directions[] =
   {
@@ -231,6 +232,7 @@ int Solve5::solver(int wormID)
     // done!
     shareBox();
     cubeToCube(myGLCubeP);
+    cubeToCube(myPortCubeP);
     return 0;
   }
   

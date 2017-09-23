@@ -29,11 +29,11 @@ using namespace std;
 class LedCube
 {
  public:
-  LedCube();
-  ~LedCube();
+  LedCube     ();
+  ~LedCube    ();
   //  LedCube() ( const LedCube &obj);  // copy constructor
-  int init();
-  int clear();
+  int init    ();
+  int clear   ();
   int drawCube();
 
   int setSpeed(int newSpeed); 
