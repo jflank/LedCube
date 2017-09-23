@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdint>
+#include <list>
 
 typedef union {
   struct {
@@ -39,8 +40,8 @@ class LedCube
   int setSpeed(int newSpeed); 
   int getSpeed(); 
 
-  int      set             (int x, int y, int z, uint32_t val);
-  uint32_t get             (int x, int y, int z);
+  int       set            (int x, int y, int z, uint32_t val);
+  uint32_t  get            (int x, int y, int z);
 
   int       receiveByte    (uint8_t * ); //first byte must be 0xF2
   uint8_t * cubeToByte     (uint8_t * ); //cubeCharsP must be pre-allocated to 65 bytes
@@ -48,12 +49,14 @@ class LedCube
   void      coutByte       (const uint8_t * data, int data_length);
 
 
-  int        receiveRGB     (uint32_t * ); //colorized version sends RGB struct. 
-  uint32_t * cubeToRGB       (uint32_t * ); 
+  int       receiveRGB      (uint32_t * ); //colorized version sends RGB struct.
+  uint32_t *cubeToRGB       (uint32_t * ); 
 
 
-  int cubeToCube             (LedCube * cubeP); //just a couple of memcpy's
-  int cubeToFile             (const char*  filename);
+  int       cubeToReceivers ();
+  int       cubeAddReceiver (LedCube * cubeP);
+  int       cubeToCube      (LedCube * cubeP); //just a couple of memcpy's
+  int       cubeToFile      (const char*  filename);
 
   
  private:
@@ -62,8 +65,9 @@ class LedCube
   static const     int PACKETSIZE = (CUBESIZE * CUBESIZE + 1); //only need n^2 bytes
   static const     int COLORPACKETSIZE = (CUBESIZE * CUBESIZE * CUBESIZE *sizeof(uint32_t)); 
   uint32_t         m_cube[CUBESIZE][CUBESIZE][CUBESIZE];
-  pthread_mutex_t m_mutex;
-  int             m_speed;
+  pthread_mutex_t  m_mutex;
+  int              m_speed;
+  list<LedCube*>   m_receivers; // group of cubes to copy to
 };
 
 

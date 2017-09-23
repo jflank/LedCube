@@ -18,10 +18,6 @@
 #include <errno.h>
 #include "Solve5x5.h"
 
-//remove when we can register cubes against each other.
-#include "GLcube.h"
-#include "Serialcube.h"
-
 const char * directions[] =
   {
     "enee", //jhf this is a cheat for 'A' but we got to start somewhere 
@@ -231,8 +227,7 @@ int Solve5::solver(int wormID)
   if (wormID == 25) {
     // done!
     shareBox();
-    cubeToCube(myGLCubeP);
-    cubeToCube(myPortCubeP);
+    cubeToReceivers();
     return 0;
   }
   
@@ -249,8 +244,8 @@ int Solve5::solver(int wormID)
     numiter = 0;
     shareBox();
     printBox();
-    cubeToCube(myGLCubeP); // this may do nothing if GLcube wasn't created.
-    cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
+    cubeToReceivers();
+    
   }
 
   for (z = 0; z < 5; z ++) {

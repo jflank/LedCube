@@ -33,10 +33,9 @@ static void show_usage()
   cerr << "Usage: " << endl;
   cout << "Options:\n"
        << "\t-h\tShow this help message\n"
-       << "\t-g\tShow the 8x8x8 cube in OpenGL.\n"
+       << "\t-g\tShow the cube in OpenGL.\n"
        << "\t-a #\tSet the solver speed (-a 1 is around 1 piece per second)\n"
-       << "\t-s\tShow 5x5 solver\n"
-       << "\t-e\tShow 8 queens solver\n"
+       << "\t-s [5|8]\tShow 5x5 solver or the 8 queens solver\n"
        << "\t-p\tSend data over the serial port\n"
        << "\t-z [0-8]\tRun different animations\n"
        << endl;
@@ -57,11 +56,11 @@ int main(int argc, char *argv[])
   int aflag = 0;
   int eflag = 0;
   int sflag = 0;
-  int tflag = 0;
   int pflag = 0;
   int zflag = 0;
   char *avalue = NULL;
   char *zvalue = NULL;
+  char *svalue = NULL;
   int c;
 
   opterr = 0;
@@ -70,13 +69,14 @@ int main(int argc, char *argv[])
   el::Loggers::reconfigureAllLoggers(conf);
 
   LOG(INFO) << "Starting" ;
-  while ((c = getopt (argc, argv, "egstpa:z:")) != -1) {
+  while ((c = getopt (argc, argv, "egs:pa:z:")) != -1) {
     switch (c) {
     case 'g':
       gflag = 1;
       break;
     case 's':
       sflag = 1;
+      svalue = optarg;
       break;
     case 'e':
       eflag = 1;
@@ -85,10 +85,8 @@ int main(int argc, char *argv[])
       avalue = optarg;
       break;
     case 'z':
+      zflag = 1;
       zvalue = optarg;
-      break;
-    case 't':
-      tflag = 1;
       break;
     case 'p':
       pflag = 1;
@@ -115,30 +113,36 @@ int main(int argc, char *argv[])
       return 1;
     }
   }
-	     
-  if (eflag) {
-    my8CubeP = new Solve8Cube();
-    ret = pthread_create( &thread3, NULL, mainsolve8, NULL);
-    if (ret != 0) {
-      return 1;
-    }
-  }
-  
-  if (gflag && tflag == 0) {
+
+  if (gflag) {
+    myGLCubeP = new GLCube();
+    pflag && my8CubeP->cubeAddReceiver(myPortCubeP);
+
     ret = pthread_create( &thread1, NULL, mainGL, NULL);
     if (ret != 0) {
       return 1;
     }
   }
   
-  if (sflag) {
+  if (sflag && svalue[0] == '8') {
+    my8CubeP = new Solve8Cube();
+    pflag && my8CubeP->cubeAddReceiver(myPortCubeP);
+    gflag && my8CubeP->cubeAddReceiver(myGLCubeP);
+    
+    ret = pthread_create( &thread3, NULL, mainsolve8, NULL);
+    if (ret != 0) {
+      return 1;
+    }
+  }
+  
+  if (sflag && svalue[0] == '5') {
     my5CubeP = new Solve5();
+    pflag && my5CubeP->cubeAddReceiver(myPortCubeP);
+    gflag && my5CubeP->cubeAddReceiver(myGLCubeP);
+
     if (avalue != NULL) {
       int spd = strtol(avalue, &avalue, 10);
       my5CubeP->setSpeed(spd);
-    }
-    if (tflag && gflag == 0) {
-      myGLCubeP = new GLCube();
     }
     ret = pthread_create( &thread2, NULL, mainsolve5, NULL);
     if (ret != 0) {
@@ -148,15 +152,13 @@ int main(int argc, char *argv[])
 
   if (zvalue) {
     myAnimCubeP = new AnimCube();
+    pflag && myAnimCubeP->cubeAddReceiver(myPortCubeP);
+    gflag && myAnimCubeP->cubeAddReceiver(myGLCubeP);
+
     ret = pthread_create( &thread1, NULL, mainAnim, zvalue);
     if (ret != 0) {
       return 1;
     }
-  }
-
-  if (aflag) {
-    cout << avalue << endl;
-    return 1;
   }
 
   if (gflag) pthread_join( thread1, NULL);

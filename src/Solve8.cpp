@@ -21,9 +21,6 @@
 #include <X11/Xlib.h>
 #include <errno.h>
 #include "Solve8.h"
-#include "Serialcube.h"
-#include "GLcube.h"
-
 
 void Solve8Cube::printSol()
 {
@@ -199,8 +196,7 @@ void * mainsolve8(void * ptr)
       usleep(1000000);
       my8CubeP->printSol();
       my8CubeP->shareBox();
-      my8CubeP->cubeToCube(myGLCubeP); // this may do nothing if GLcube wasn't created.
-      my8CubeP->cubeToCube(myPortCubeP);// this may do nothing if Portcube wasn't created.
+      my8CubeP->cubeToReceivers();
     }
     return 0;
 }

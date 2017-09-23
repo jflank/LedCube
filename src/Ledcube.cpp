@@ -11,15 +11,13 @@
 #include <time.h>
 #include <sys/time.h>
 #include <X11/Xlib.h>
-#include <GL/glx.h>
-#include <GL/glext.h>
-#include <GL/glu.h>
 #include <pthread.h>
 #include <errno.h>
 #include <iostream>
-#include "Ledcube.h"
 #include "assert.h"
 #include <bitset>
+
+#include "Ledcube.h"
 
 using namespace std;
 
@@ -220,6 +218,25 @@ uint8_t * LedCube::cubeToByteAlloc(void)
   cubeToByte(buffer);
   return buffer;
 }
+
+/* 
+ * Periodically, push this cube to a series of receiving cubes.
+ */
+int LedCube::cubeToReceivers()
+{
+  for (std::list<LedCube*>::iterator it=m_receivers.begin();
+       it != m_receivers.end();
+       ++it) {
+    cubeToCube(*it);
+  }
+}  
+
+int LedCube::cubeAddReceiver(LedCube *cubeP)
+{
+  m_receivers.push_back(cubeP);
+  return 0;
+}
+
 
 /*
  * This is a little inefficient, but it's better to have two copies than deal 

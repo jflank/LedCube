@@ -13,8 +13,6 @@
 #include "easylogging++.h"
 #include <iomanip>
 #include "math.h"
-//Serialcube shouldn't be necessary once cube registration is allowed.
-#include "Serialcube.h"
 
 #define WINDOWX 640
 #define WINDOWY 640
@@ -165,9 +163,6 @@ void keyboard(unsigned char key, int x, int y)
     case 'p':
       myGLCubeP->cubeToFile("GLCUBE.bin");
       break;
-    case 's':
-      myGLCubeP->cubeToCube(myPortCubeP); // this may do nothing if Portcube wasn't created.
-      break;
     case 0x1B:
     case 'q':
     case 'Q':
@@ -255,14 +250,13 @@ void mouse(int btn, int state, int x, int y)
     {
       if (btn == GLUT_LEFT_BUTTON) {
 	clickLED(x, y, CUBEON);
-	myGLCubeP->cubeToCube(myPortCubeP); // this may do nothing if Portcube wasn't created.
 	//	rot_y_vel -= 0.1;
       }
       else if (btn == GLUT_RIGHT_BUTTON)
 	clickLED(x, y, CUBEOFF);
-	myGLCubeP->cubeToCube(myPortCubeP); // this may do nothing if Portcube wasn't created.
       //	rot_y_vel += 0.1;
     }
+  myGLCubeP->cubeToReceivers();
 }
 
 
@@ -287,8 +281,6 @@ void * mainGL(void * ptr)
 {
   int argc = 1;
   char *argv[1] = {(char*)"Something"};
-
-  myGLCubeP = new GLCube();
 
   //myGLCubeP->set(0,0,0, CUBEON);
   //myGLCubeP->set(1,0,0, CUBEON);

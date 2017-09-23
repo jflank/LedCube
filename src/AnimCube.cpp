@@ -14,10 +14,8 @@
 #include <time.h>
 #include "AnimCube.h"
 #include <unistd.h>
+#include "easylogging++.h"
 
-//remove when we can register cubes against each other.
-#include "GLcube.h"
-#include "Serialcube.h"
 
 //constants
 #define PI 3.14159265358979323846
@@ -46,9 +44,9 @@ void AnimCube::defaultMem(void){
 }
 
 //THIS IS RUN IN THE ANIMATION THREAD
-void AnimCube::animate(int inAnim){
+void AnimCube::animate(int inAnim) {
   //set the structure data that is used in other functions
-
+  pthread_mutex_lock( &m_mutex);
 
   if(!AMEM.error){
     //		if(!interact){
@@ -96,6 +94,7 @@ void AnimCube::animate(int inAnim){
   //generate and send the characters
   //hold the image
   AMEM.slowCount++;
+  pthread_mutex_unlock( &m_mutex);
 }
 //////////////
 //ANIMATIONS//
@@ -551,7 +550,7 @@ void AnimCube::randomExpand(void){
       AMEM.randDir *= -1;
     }
   }
-  cout << "turning" << rX << rY<<rZ << AMEM.randDir <<endl;
+
   m_cube[rX][rY][rZ] = AMEM.randDir==1 ? CUBEON:CUBEOFF;
 }
 
@@ -919,7 +918,6 @@ void *mainAnim(void* ptr)
     }
     i++;
     myAnimCubeP->animate(action);
-    myAnimCubeP->cubeToCube(myGLCubeP);
-    myAnimCubeP->cubeToCube(myPortCubeP);
+    myAnimCubeP->cubeToReceivers();
   }
 }
