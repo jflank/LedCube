@@ -33,11 +33,21 @@ static void show_usage()
   cerr << "Usage: " << endl;
   cout << "Options:\n"
        << "\t-h\tShow this help message\n"
-       << "\t-g\tShow the cube in OpenGL.\n"
+       << "\t-g\tShow the cube in OpenGL <uijkm, control the rotation>.\n"
        << "\t-a #\tSet the solver speed (-a 1 is around 1 piece per second)\n"
        << "\t-s [5|8]\tShow 5x5 solver or the 8 queens solver\n"
        << "\t-p\tSend data over the serial port\n"
-       << "\t-z [0-8]\tRun different animations\n"
+       << "\t-z [0-10]\tRun different animations\n"
+       << "\t\t 0-2 - planes moving up/down left/right.\n"
+       << "\t\t 3-4 - sine wave up/down left/right.\n"
+       << "\t\t 5   - pulse.\n"
+       << "\t\t 6   - rain.\n"
+       << "\t\t 7   - spiral.\n"
+       << "\t\t 8   - random Expand/contract.\n"
+       << "\t\t 9   - display characters - ex: '-z 9HELLOWORLD'.\n"
+       << "\t\t 10  - Current time, moving around the cube.\n"
+    
+    
        << endl;
 }
 

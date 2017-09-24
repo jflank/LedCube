@@ -16,10 +16,9 @@
 #include <unistd.h>
 #include "easylogging++.h"
 
-
 //constants
 #define PI 3.14159265358979323846
-#define size 8
+//#define size 8
 #define centre 3.5
 
 //SETS THE ANIMATION MEMORY STRUCTURE TO ITS DEFAULT VALUES
@@ -28,7 +27,6 @@ void AnimCube::defaultMem(void){
   AMEM.phase = 0;
   AMEM.wipePos = 0;
   AMEM.wipeDir = 1;
-  AMEM.planePos = 0;
   AMEM.firstPass = 1;
   AMEM.snakeStart = 1;
   AMEM.buttonPress = 0;
@@ -41,29 +39,24 @@ void AnimCube::defaultMem(void){
   AMEM.cubeGrowDir = 2;
   AMEM.cubeGrowSize = 7;
   AMEM.randDir = 1;
+  AMEM.disappearAxis = XAXIS;
 }
 
 //THIS IS RUN IN THE ANIMATION THREAD
-void AnimCube::animate(int inAnim) {
+void AnimCube::animate(int inAnim, char ch) {
   //set the structure data that is used in other functions
   pthread_mutex_lock( &m_mutex);
-
+  
   if(!AMEM.error){
-    //		if(!interact){
-    //ADD MORE ANIMATIONS HERE
-    //make sure you change the numOfAnimations in animations.h
     switch(inAnim){
     case 0: //wipe X
-      AMEM.wipeAxis = 0;
-      wipeFullPlane();
+      wipeFullPlane(XAXIS);
       break;
     case 1: //wipe Y
-      AMEM.wipeAxis = 1;
-      wipeFullPlane();
+      wipeFullPlane(YAXIS);
       break;
     case 2: //wipe Z
-      AMEM.wipeAxis = 2;
-      wipeFullPlane();
+      wipeFullPlane(ZAXIS);
       break;
     case 3: 
       sine(); 
@@ -83,6 +76,12 @@ void AnimCube::animate(int inAnim) {
     case 8:
       randomExpand();
       break;
+    case 9:
+      type(ch);
+      break;
+    case 10:
+      clockA();
+      break;
     default:
       clear();
       clearDummy();
@@ -101,28 +100,34 @@ void AnimCube::animate(int inAnim) {
 //////////////
 
 //USE wipeImage and loadPlane TO CREATE FULL PLANE WIPE ANIMATION IN DIRECTION OF wipeAxis
-void AnimCube::wipeFullPlane(void){
+void AnimCube::wipeFullPlane(axes_t axis)
+{
   if(AMEM.firstPass){
     //if this is the initial call load the full plane
-    loadPlane();
-    AMEM.wipePos = AMEM.planePos;
+    loadPlane(axis, 0);
+    AMEM.wipePos = 0;
     AMEM.firstPass = 0;
   }
   if(AMEM.slowCount > 10 - m_speed){
     //animate
-    wipeImage();
+    wipeImage(axis);
     AMEM.slowCount = 0;
   }
 }
 
 //FILLS A PLANE AT planePos IN DIRECTION OF wipeAxis
-void AnimCube::loadPlane(void){
+void AnimCube::loadPlane(axes_t axis, int planePos)
+{
   //fills and entire plane at the the chosen location along the chosen axis
-  int x, y, z;
-  for(x = 0; x < size; x++){
-    for(y = 0; y < size; y++){
-      for(z = 0; z < size; z++){
-	m_cube[AMEM.wipeAxis==0?AMEM.planePos:x][AMEM.wipeAxis==1?AMEM.planePos:y][AMEM.wipeAxis==2?AMEM.planePos:z] = 1;
+  int x, y, z, px, py, pz;
+  for(x = 0; x < CUBESIZE; x++){
+    for(y = 0; y < CUBESIZE; y++){
+      for(z = 0; z < CUBESIZE; z++){
+	px = axis == XAXIS ? planePos:x;
+	py = axis == YAXIS ? planePos:y;
+	pz = axis == ZAXIS ? planePos:z;
+
+	m_cube[px][py][pz] = CUBEON;
       }
     }
   }
@@ -131,9 +136,9 @@ void AnimCube::loadPlane(void){
 //LOADS AN 8x8 ARRAY ONTO THE DUMMY CUBE
 void AnimCube::loadArray(int *inArray){
   int i, j;
-  for(i = 0; i < size; i++){
-    for(j = 0; j < size; j++){
-      dummyCube[size - 1 - j][size-1][size - 1 -i] = *inArray++;
+  for(i = 0; i < CUBESIZE; i++){
+    for(j = 0; j < CUBESIZE; j++){
+      dummyCube[CUBESIZE - 1 - j][CUBESIZE-1][CUBESIZE - 1 -i] = *inArray++;
     }
   }
 }
@@ -201,50 +206,50 @@ void AnimCube::loadBMP(void){
 }
 */
 //WIPES AN IMAGE BETWEEN 0 AND SIZE IN DIRECTION OF wipeAxis
-void AnimCube::wipeImage(void){
+void AnimCube::wipeImage(axes_t axis){
   int x, y, z;
-  switch(AMEM.wipeAxis){
-  case 0: //x axis
-    for(y = 0; y < size; y++){
-      for(z = 0; z < size; z++){
+  switch(axis){
+  case XAXIS: //x axis
+    for(y = 0; y < CUBESIZE; y++){
+      for(z = 0; z < CUBESIZE; z++){
 	//flip direction at ends
-	if(AMEM.wipePos+AMEM.wipeDir >= size){
+	if(AMEM.wipePos+AMEM.wipeDir >= CUBESIZE){
 	  AMEM.wipeDir*=-1;
 	}else if(AMEM.wipePos+AMEM.wipeDir < 0 ){
 	  AMEM.wipeDir *= -1;
 	}
 	//shift image
 	m_cube[AMEM.wipePos+AMEM.wipeDir][y][z] = m_cube[AMEM.wipePos][y][z];
-	m_cube[AMEM.wipePos][y][z] = 0;
+	m_cube[AMEM.wipePos][y][z] = CUBEOFF;
       }
     }
     //increment next position
     AMEM.wipePos+=AMEM.wipeDir;
     break;
-  case 1: //y axis
-    for(x = 0; x < size; x++){
-      for(z = 0; z < size; z++){
-	if(AMEM.wipePos+AMEM.wipeDir >= size){
+  case YAXIS: //y axis
+    for(x = 0; x < CUBESIZE; x++){
+      for(z = 0; z < CUBESIZE; z++){
+	if(AMEM.wipePos+AMEM.wipeDir >= CUBESIZE){
 	  AMEM.wipeDir*=-1;
 	}else if(AMEM.wipePos+AMEM.wipeDir < 0 ){
 	  AMEM.wipeDir *= -1;
 	}
 	m_cube[x][AMEM.wipePos+AMEM.wipeDir][z] = m_cube[x][AMEM.wipePos][z];
-	m_cube[x][AMEM.wipePos][z] = 0;
+	m_cube[x][AMEM.wipePos][z] = CUBEOFF;
       }
     }
     AMEM.wipePos+=AMEM.wipeDir;
     break;
-  case 2: //z axis
-    for(x = 0; x < size; x++){
-      for(y = 0; y < size; y++){
-	if(AMEM.wipePos+AMEM.wipeDir >= size){
+  case ZAXIS: //z axis
+    for(x = 0; x < CUBESIZE; x++){
+      for(y = 0; y < CUBESIZE; y++){
+	if(AMEM.wipePos+AMEM.wipeDir >= CUBESIZE){
 	  AMEM.wipeDir*=-1;
 	}else if(AMEM.wipePos+AMEM.wipeDir < 0 ){
 	  AMEM.wipeDir *= -1;
 	}
 	m_cube[x][y][AMEM.wipePos+AMEM.wipeDir] = m_cube[x][y][AMEM.wipePos];
-	m_cube[x][y][AMEM.wipePos] = 0;
+	m_cube[x][y][AMEM.wipePos] = CUBEOFF;
       }
     }
     AMEM.wipePos+=AMEM.wipeDir;
@@ -257,26 +262,25 @@ void AnimCube::disappear(void){
   int i, j, k;
 
   //shift cube contents along disappear axis
-  for(i = 0; i < size-1; i++){
-    for(j = 0; j < size; j++){
-      for(k = 0; k < size; k++){
+  for(i = 0; i < CUBESIZE-1; i++){
+    for(j = 0; j < CUBESIZE; j++){
+      for(k = 0; k < CUBESIZE; k++){
+	// check to see if plane has moved the entire cube and set dissapearDone
 	switch(AMEM.disappearAxis){
-	case 0:
-	  // check to see if plane has moved the entire cube and set dissapearDone
-	  // the 99 is for SPACE characters, these will not display but are required to distinquish between zeros
-	  if((m_cube[j][i][k] == 1 || m_cube[j][i][k] == 9) && i == 0){
+	case XAXIS:
+	  if(m_cube[j][i][k] == CUBEON && i == 0){
 	    AMEM.disappearDone = 1;
 	  }
 	  m_cube[j][i][k] = m_cube[j][i+1][k];
 	  break;
-	case 1:
-	  if((m_cube[i][j][k] == 1 || m_cube[i][j][k] == 9) && i == 0){
+	case YAXIS:
+	  if(m_cube[i][j][k] == CUBEON && i == 0){
 	    AMEM.disappearDone = 1;
 	  }
 	  m_cube[i][j][k] = m_cube[i+1][j][k];
 	  break;
-	case 2:
-	  if((m_cube[j][k][i] == 1 || m_cube[j][k][i] == 9) && i == 0){
+	case ZAXIS:
+	  if(m_cube[j][k][i] == CUBEON && i == 0){
 	    AMEM.disappearDone = 1;
 	  }
 	  m_cube[j][k][i] = m_cube[j][k][i+1];
@@ -287,17 +291,17 @@ void AnimCube::disappear(void){
   }
 	
   //load new image from dummy to m_cube
-  for(i = 0; i < size; i++){
-    for(j = 0; j < size; j++){
+  for(i = 0; i < CUBESIZE; i++){
+    for(j = 0; j < CUBESIZE; j++){
       switch(AMEM.disappearAxis){
-      case 0:
-	m_cube[i][7][j] = dummyCube[i][7][j];
+      case XAXIS:
+	m_cube[i][7][j] = dummyCube[i][7][j] ? CUBEON : CUBEOFF;
 	break;
-      case 1:
-	m_cube[7][i][j] = dummyCube[7][i][j];
+      case YAXIS:
+	m_cube[7][i][j] = dummyCube[7][i][j] ? CUBEON : CUBEOFF;
 	break;
-      case 2:
-	m_cube[j][i][7] = dummyCube[j][i][7];
+      case ZAXIS:
+	m_cube[j][i][7] = dummyCube[j][i][7] ? CUBEON : CUBEOFF;
 	break;
       }
 			
@@ -320,16 +324,16 @@ void AnimCube::outerRotate(void){
   loop();
 
   //wrap the ORArray arrpound the outside of the cube
-  for(r = 0; r < size*4-4; r++){
-    for(z = 0; z < size; z++){
-      if(r >= 0 && r < size){
-	m_cube[size - 1 - r][7][z] = ORArray[r][z];
-      }else if(r >= size && r < size*2-1){
-	m_cube[0][size - (r-size) - 2][z] = ORArray[r][z];
-      }else if(r >= size*2-1 && r < size*3-2){
-	m_cube[r-(2*size-2)][0][z] = ORArray[r][z];
-      }else if(r >= size*3-2 && r < size*4-3){
-	m_cube[7][r-(3*size-3)][z] = ORArray[r][z];
+  for(r = 0; r < CUBESIZE*4-4; r++){
+    for(z = 0; z < CUBESIZE; z++){
+      if(r >= 0 && r < CUBESIZE){
+	m_cube[CUBESIZE - 1 - r][7][z] = ORArray[r][z];
+      }else if(r >= CUBESIZE && r < CUBESIZE*2-1){
+	m_cube[0][CUBESIZE - (r-CUBESIZE) - 2][z] = ORArray[r][z];
+      }else if(r >= CUBESIZE*2-1 && r < CUBESIZE*3-2){
+	m_cube[r-(2*CUBESIZE-2)][0][z] = ORArray[r][z];
+      }else if(r >= CUBESIZE*3-2 && r < CUBESIZE*4-3){
+	m_cube[7][r-(3*CUBESIZE-3)][z] = ORArray[r][z];
       }
     }
   }
@@ -343,20 +347,20 @@ void AnimCube::loop(void){
   //shift and loop the ORArray until the correct position is reached
   for(n = 0; n < AMEM.rotatePos; n++){
     //shift first column into a temp array
-    for(z = 0; z < size; z++){
+    for(z = 0; z < CUBESIZE; z++){
       temp[z] = ORArray[0][z];
     }
 
     //shift all columns down
-    for(r = 0; r < size*4-5; r++){
-      for(z = 0; z < size; z++){
+    for(r = 0; r < CUBESIZE*4-5; r++){
+      for(z = 0; z < CUBESIZE; z++){
 	ORArray[r][z] = ORArray[r+1][z];
       }
     }
 
     //move data from first column into last
-    for(z = 0; z < size; z++){
-      ORArray[size*4-5][z] = temp[z];
+    for(z = 0; z < CUBESIZE; z++){
+      ORArray[CUBESIZE*4-5][z] = temp[z];
     }
   }
 
@@ -376,10 +380,10 @@ void AnimCube::sine(void)
   clear();
   
   //basic sine function
-  for(x = 0; x < size; x++){
-    for(y = 0; y < size; y++){
-      Z = sin(AMEM.phase + sqrt(pow(map(x,0,size-1,-PI,PI),2) + pow(map(y,0,size-1,-PI,PI),2)));
-      Z = map(Z,-1,0.95,0,size - 1); 	
+  for(x = 0; x < CUBESIZE; x++){
+    for(y = 0; y < CUBESIZE; y++){
+      Z = sin(AMEM.phase + sqrt(pow(map(x,0,CUBESIZE-1,-PI,PI),2) + pow(map(y,0,CUBESIZE-1,-PI,PI),2)));
+      Z = map(Z,-1,0.95,0,CUBESIZE - 1); 	
       m_cube[x][y][(int)Z] = 1;
     }
   }
@@ -394,9 +398,9 @@ void AnimCube::sideSine(void){
   double Z = 0;
 
   clear();
-  for(x = 0; x < size; x++){
-    for(y = 0; y < size; y++){
-      Z = sin(AMEM.phase + sqrt(pow(map(x,-8,size-1,-PI,PI),2) + pow(map(y,-8,size-1,-PI,PI),2)));
+  for(x = 0; x < CUBESIZE; x++){
+    for(y = 0; y < CUBESIZE; y++){
+      Z = sin(AMEM.phase + sqrt(pow(map(x,-8,CUBESIZE-1,-PI,PI),2) + pow(map(y,-8,CUBESIZE-1,-PI,PI),2)));
       Z = map(Z,-0.9,0.9,0,7);
       m_cube[x][y][(int)Z] = 1;
     }
@@ -424,9 +428,9 @@ void AnimCube::rain(void){
   }
 
   if(AMEM.slowCount > 6){
-    for(x = 0; x < size; x++){
-      for(y = 0; y < size; y++){
-	for(z = 0; z < size-1; z++){
+    for(x = 0; x < CUBESIZE; x++){
+      for(y = 0; y < CUBESIZE; y++){
+	for(z = 0; z < CUBESIZE-1; z++){
 	  m_cube[x][y][z] = m_cube[x][y][z+1];
 	  if(m_cube[x][y][z] == 1){
 	    m_cube[x][y][7] = 5;
@@ -449,9 +453,9 @@ void AnimCube::cubePulse(void){
     clear();
 
     //draw the 12 edges of a cube determained by cubeGrowSize
-    for(x = 0; x < size; x++){
-      for(y = 0; y < size; y++){
-	for(z = 0; z < size; z++){
+    for(x = 0; x < CUBESIZE; x++){
+      for(y = 0; y < CUBESIZE; y++){
+	for(z = 0; z < CUBESIZE; z++){
 	  //corners
 	  if(std::abs((int)(2*(x-centre))) == AMEM.cubeGrowSize &&
 	     std::abs((int)(2*(y-centre))) == AMEM.cubeGrowSize &&
@@ -501,13 +505,13 @@ void AnimCube::spiral(void){
   double Y = 0;
   clear();
 
-  for(z = 0; z < size; z++){
+  for(z = 0; z < CUBESIZE; z++){
     //the 3 itterations make the spiral thicker which looks better
     for(i = 0; i < 3; i++){
-      Y = cos(AMEM.phase + i*PI/8 + map(z,0,size-1,0,2*PI));
-      X = sin(AMEM.phase + i*PI/8 + map(z,0,size-1,0,2*PI));
-      Y = map(Y,-1.1,0.9,0,size-1);
-      X = map(X,-1.1,0.9,0,size-1);
+      Y = cos(AMEM.phase + i*PI/8 + map(z,0,CUBESIZE-1,0,2*PI));
+      X = sin(AMEM.phase + i*PI/8 + map(z,0,CUBESIZE-1,0,2*PI));
+      Y = map(Y,-1.1,0.9,0,CUBESIZE-1);
+      X = map(X,-1.1,0.9,0,CUBESIZE-1);
       m_cube[(int)X][(int)Y][z] = 1;
     }
   }
@@ -604,15 +608,15 @@ void AnimCube::snake(void){
 
       if(dummyCube[AMEM.tailX-1][AMEM.tailY][AMEM.tailZ] == AMEM.chopNum && AMEM.tailX-1 != -1){
 	AMEM.tailX--;
-      }else if(dummyCube[AMEM.tailX+1][AMEM.tailY][AMEM.tailZ] == AMEM.chopNum && AMEM.tailX+1 != size){
+      }else if(dummyCube[AMEM.tailX+1][AMEM.tailY][AMEM.tailZ] == AMEM.chopNum && AMEM.tailX+1 != CUBESIZE){
 	AMEM.tailX++;
       }else if(dummyCube[AMEM.tailX][AMEM.tailY-1][AMEM.tailZ] == AMEM.chopNum && AMEM.tailY-1 != -1){
 	AMEM.tailY--;
-      }else if(dummyCube[AMEM.tailX][AMEM.tailY+1][AMEM.tailZ] == AMEM.chopNum && AMEM.tailY+1 != size){
+      }else if(dummyCube[AMEM.tailX][AMEM.tailY+1][AMEM.tailZ] == AMEM.chopNum && AMEM.tailY+1 != CUBESIZE){
 	AMEM.tailY++;
       }else if(dummyCube[AMEM.tailX][AMEM.tailY][AMEM.tailZ-1] == AMEM.chopNum && AMEM.tailZ-1 != -1){
 	AMEM.tailZ--;
-      }else if(dummyCube[AMEM.tailX][AMEM.tailY][AMEM.tailZ+1] == AMEM.chopNum && AMEM.tailZ+1 != size){
+      }else if(dummyCube[AMEM.tailX][AMEM.tailY][AMEM.tailZ+1] == AMEM.chopNum && AMEM.tailZ+1 != CUBESIZE){
 	AMEM.tailZ++;
       }
       AMEM.chopNum++;
@@ -688,11 +692,11 @@ void AnimCube::snake(void){
       break;
     }
 		
-    if(AMEM.headX > size-1 || AMEM.headX < 0){
+    if(AMEM.headX > CUBESIZE-1 || AMEM.headX < 0){
       AMEM.snakeDie = 1;
-    }else if(AMEM.headY > size-1 || AMEM.headY < 0){
+    }else if(AMEM.headY > CUBESIZE-1 || AMEM.headY < 0){
       AMEM.snakeDie = 1;
-    }else if(AMEM.headZ > size-1 || AMEM.headZ < 0){
+    }else if(AMEM.headZ > CUBESIZE-1 || AMEM.headZ < 0){
       AMEM.snakeDie = 1;
     }else if(dummyCube[AMEM.headX][AMEM.headY][AMEM.headZ] != 0){
       AMEM.snakeDie = 1;
@@ -703,11 +707,11 @@ void AnimCube::snake(void){
 	
   if(AMEM.snakeAdd){
     clear();
-    for(x = 0; x < size; x++){
-      for(y = 0; y < size; y++){
-	for(z = 0; z < size; z++){
+    for(x = 0; x < CUBESIZE; x++){
+      for(y = 0; y < CUBESIZE; y++){
+	for(z = 0; z < CUBESIZE; z++){
 	  if(dummyCube[x][y][z] != 0){
-	    m_cube[x][y][z] = 1;
+	    m_cube[x][y][z] = CUBEON;
 	  }
 	}
       }
@@ -730,20 +734,20 @@ void AnimCube::mouse(void){
   clearDummy();
 	
   if(I >= 0 && I <= captureWidth  && J >= 0 && J <= captureHeight){
-    I = map(I, 0, captureWidth , 0, size-1);
-    J = map(J, 0, captureHeight , 0, size-1);
+    I = map(I, 0, captureWidth , 0, CUBESIZE-1);
+    J = map(J, 0, captureHeight , 0, CUBESIZE-1);
     switch(AMEM.disappearAxis){
     case 0:
-      dummyCube[size - 1 - I][7][size - 1 - J] = 1;
-      m_cube[size - 1 - I][7][size - 1 - J] = 1;
+      dummyCube[CUBESIZE - 1 - I][7][CUBESIZE - 1 - J] = 1;
+      m_cube[CUBESIZE - 1 - I][7][CUBESIZE - 1 - J] = 1;
       break;
     case 1:
-      dummyCube[7][size - 1 - I][size - 1 - J] = 1;
-      m_cube[7][size - 1 - I][size - 1 - J] = 1;
+      dummyCube[7][CUBESIZE - 1 - I][CUBESIZE - 1 - J] = 1;
+      m_cube[7][CUBESIZE - 1 - I][CUBESIZE - 1 - J] = 1;
       break;
     case 2:
-      dummyCube[size - 1 - I][J][7] = 1;
-      m_cube[size - 1 - I][J][7] = 1;
+      dummyCube[CUBESIZE - 1 - I][J][7] = 1;
+      m_cube[CUBESIZE - 1 - I][J][7] = 1;
       break;
     }
   }
@@ -756,24 +760,27 @@ void AnimCube::mouse(void){
 #endif
 
 //CAPTURE AND DISPLAY TEXT FROM KEYBOARD
-void AnimCube::type(char in){
+void AnimCube::type(char in)
+{
   //convert to upper case
   if(isalpha(in)){
-    in -= 0x20;
+    //    in -= 0x20;
+    in = toupper(in);
   }
-
-  if(isprint(in)){
-    if(AMEM.disappearDone && AMEM.typeStringPos == 0){
-      loadArray(IMG(in));
-      AMEM.slowCount = 0;
-      AMEM.disappearDone = 0;
-      AMEM.pressHandled = 1;
-    }else{
-      AMEM.typeString[AMEM.typeStringPos] = in;
-      AMEM.typeStringPos++;
-      AMEM.disappearDone = 0;
-      AMEM.pressHandled = 1;
-    }
+  
+  //  if(AMEM.disappearDone && AMEM.typeStringPos == 0) {
+  if(AMEM.disappearDone) {
+    loadArray(IMG(in));
+    AMEM.slowCount = 0;
+    AMEM.disappearDone = 0;
+    AMEM.pressHandled = 1;
+  }
+  /*jhf  this buffers up the entire string one char at a time. not needed here...
+  else {
+    AMEM.typeString[AMEM.typeStringPos] = in;
+    AMEM.typeStringPos++;
+    AMEM.disappearDone = 0;
+    AMEM.pressHandled = 1;
   }
 
   if(AMEM.disappearDone && AMEM.typeStringPos > 0){
@@ -781,8 +788,7 @@ void AnimCube::type(char in){
     AMEM.disappearDone = 0;
     AMEM.pressHandled = 1;
   }
-
-
+  */
   if(AMEM.slowCount > map(m_speed, 0, 10, 5, 1)){
     disappear();
     AMEM.slowCount = 0;
@@ -829,9 +835,9 @@ void AnimCube::clockA(void){
     for(i = 0; i < 5; i++){
       if(!(i == 0 && time[i] == '0')){
 	tempArP = IMG(time[i]);
-	for(x = 0; x < size; x++){
-	  for(y = 0; y < size; y++){
-	    tempAr[y][size - 1 - x] = *tempArP++;
+	for(x = 0; x < CUBESIZE; x++){
+	  for(y = 0; y < CUBESIZE; y++){
+	    tempAr[y][CUBESIZE - 1 - x] = *tempArP++;
 	  }
 	}
 
@@ -841,13 +847,13 @@ void AnimCube::clockA(void){
 	  skip = 2;
 	}
 
-	for(z = 0; z < size; z++){
-	  for(r = 0; r < size-skip; r++){
+	for(z = 0; z < CUBESIZE; z++){
+	  for(r = 0; r < CUBESIZE-skip; r++){
 	    ORArray[r+offset][z] = tempAr[r+skip][z];
 	  }
 	}
 
-	offset += size - skip - 2;
+	offset += CUBESIZE - skip - 2;
       }
     }
 
@@ -890,12 +896,7 @@ double AnimCube::map(double in, double inMin, double inMax,
   return out;
 }
 
-//TRANSFER FROM DUMMY TO CUBE
-void AnimCube::dummyToCube(void){
-  memcpy(m_cube, dummyCube, sizeof(dummyCube));
-}
-
-//CLEAR cummyCube
+//CLEAR dummyCube
 void AnimCube::clearDummy(void){
   memset(dummyCube, 0, sizeof(dummyCube));
 }
@@ -907,17 +908,35 @@ AnimCube::AnimCube() : LedCube(){
 
 void *mainAnim(void* ptr)
 {
-  int action = strtol((char*) ptr, NULL, 10);
+  char * str = (char*) ptr;
+  int action = strtol(str, NULL, 10);
   int i = 0;
+  int j = 0;
+  int ich = 1;
+  char ch = str[ich];
+
+  cout << "Calling Animation with " << str << endl;
   
   while (1) {    
-    usleep(100000); // sleep 0.1 second
+    usleep(50000); // sleep 0.1 second
     if (i >20) {
       i = 0;
-      myAnimCubeP->drawCube();
+      if (action == 9) {
+	if (j > 2) {
+	  if (str[ich] != '\0') {
+	    ch = str[ich];
+	    cout << "Current Char: " << ch << endl;
+	    ich ++;
+	  }
+	  j = 0;
+	}
+	j++;
+      }
     }
     i++;
-    myAnimCubeP->animate(action);
+
+    //    myAnimCubeP->drawCube();  
+    myAnimCubeP->animate(action, str);
     myAnimCubeP->cubeToReceivers();
   }
 }

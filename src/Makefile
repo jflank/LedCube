@@ -23,7 +23,7 @@ EXE=LedCube
 
 LIB=-L/usr/X11R6/lib/ -lGL -lGLU -lglut -lX11 -l pthread
 
-all: $(EXE) 
+$(phony all): $(EXE) 
 
 $(EXE): $(OBJS)
 	$(CC) $(LDFLAGS) -o $(EXE) $(OBJS) $(LIB) 
@@ -40,7 +40,7 @@ clean:
 	$(RM) $(OBJS)
 	$(RM) $(EXE)
 	$(RM) *~
-	$(RM) $(INCDIR)/*~
+	$(RM) $(IDIR)/*~
 	$(RM) core
 
 

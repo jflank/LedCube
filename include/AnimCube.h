@@ -59,6 +59,11 @@ typedef struct{
 	int randDir;
 }animationData;
 
+typedef enum {
+  XAXIS,
+  YAXIS,
+  ZAXIS
+} axes_t;
 
 class AnimCube : public LedCube {
  public:
@@ -66,13 +71,13 @@ class AnimCube : public LedCube {
   ~AnimCube();
   
   void defaultMem       (void);
-  void animate          (int);
-  void wipeFullPlane    (void);
-  void loadPlane        (void);
+  void animate          (int, char );
+  void wipeFullPlane    (axes_t);
+  void loadPlane        (axes_t, int);
   void loadArray        (int *array);
   void dummyToCube      (void);
   void loadBMP          (void);
-  void wipeImage        (void);
+  void wipeImage        (axes_t);
   void disappear        (void);
   void outerRotate      (void);
   void loop             (void);
