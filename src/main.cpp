@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 
   if (gflag) {
     myGLCubeP = new GLCube();
-    pflag && my8CubeP->cubeAddReceiver(myPortCubeP);
+    pflag && myGLCubeP->cubeAddReceiver(myPortCubeP);
 
     ret = pthread_create( &thread1, NULL, mainGL, NULL);
     if (ret != 0) {

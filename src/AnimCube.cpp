@@ -779,7 +779,7 @@ void AnimCube::type(char in)
   else {
     AMEM.typeString[AMEM.typeStringPos] = in;
     AMEM.typeStringPos++;
-    AMEM.disappearDone = 0;
+    AMEM.disapperDone = 0;
     AMEM.pressHandled = 1;
   }
 
@@ -936,7 +936,7 @@ void *mainAnim(void* ptr)
     i++;
 
     //    myAnimCubeP->drawCube();  
-    myAnimCubeP->animate(action, str);
+    myAnimCubeP->animate(action, ch);
     myAnimCubeP->cubeToReceivers();
   }
 }
