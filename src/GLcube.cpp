@@ -36,8 +36,7 @@ void GLCube::drawSpheres(void)
       usleep (100*(GLMAXSPEED - m_speed));
   }
 
-  pthread_mutex_lock( &m_mutex);
-
+  unique_lock<mutex> lock(m_mutex);
 
   glPushMatrix();
   glTranslated(-1-1.0/CUBESIZE,-1.0-1.0/CUBESIZE, -36.0/CUBESIZE);
@@ -67,7 +66,6 @@ void GLCube::drawSpheres(void)
     glTranslated(0, -CUBESIZE * transfat, 0);
   }
   glPopMatrix(); 
-  pthread_mutex_unlock( &m_mutex);
 
 }
 

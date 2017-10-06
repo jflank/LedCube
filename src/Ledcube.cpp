@@ -11,7 +11,6 @@
 #include <time.h>
 #include <sys/time.h>
 #include <X11/Xlib.h>
-#include <pthread.h>
 #include <errno.h>
 #include <iostream>
 #include "assert.h"
@@ -32,21 +31,28 @@ LedCube::~LedCube ()
   //nothing to be done in destructor yet.
 }
 
-/* don't want copy constructor yet
-LedCube::LedCube(const LedCube &obj)
+/*
+ * copy constructer just copies and uses the c++11 locking mechanism to avoid 
+ * deadlocks.
+ */
+LedCube::LedCube( LedCube &obj)
 {
-  pthread_mutex_lock( obj.&m_mutex );
-  memcpy(m_cube, obj.m_cube);
-  pthread_mutex_unlock( obj.&m_mutex );
-  
-  m_mutex = PTHREAD_MUTEX_INITIALIZER;
+  m_speed = 0; // default speed is human visible
 
+  unique_lock<mutex> lock1(obj.m_mutex, std::defer_lock);
+  unique_lock<mutex> lock2(    m_mutex, std::defer_lock);
+
+  // lock both unique_locks without deadlock
+  lock(lock1, lock2);
+
+  memcpy(m_cube, obj.m_cube, sizeof(m_cube));
+  
 }
-*/
+
 /* only works in monochrome */
 int LedCube::drawCube() {
   int x,y,z;
-  pthread_mutex_lock( &m_mutex );
+  unique_lock<mutex> lock(m_mutex);
   for (z = 0; z < CUBESIZE; z ++) {
     for (y = 0; y < CUBESIZE; y ++) {
       for (x = 0; x < CUBESIZE; x ++) {
@@ -56,7 +62,6 @@ int LedCube::drawCube() {
     }
     cout << endl;
   }
-  pthread_mutex_unlock( &m_mutex );
 
   return 0;
 }
@@ -71,7 +76,7 @@ int LedCube::init()
       }
     }
   }
-  m_mutex = PTHREAD_MUTEX_INITIALIZER;
+  //  m_mutex = PTHREAD_MUTEX_INITIALIZER;
   return 0;
 }
 
@@ -86,9 +91,8 @@ int LedCube::set(int x, int y, int z, uint32_t val)
     assert(0);
     return 0;
   }
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);  
   m_cube[x][y][z] = val;
-  pthread_mutex_unlock( &m_mutex);
   return 0;
 }
 /*
@@ -102,9 +106,8 @@ uint32_t LedCube::get(int x, int y, int z)
     assert(0);
     return 0;
   }
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
   uint32_t ret = m_cube[x][y][z];
-  pthread_mutex_unlock( &m_mutex);
   return ret;
 }
 
@@ -121,7 +124,7 @@ int LedCube::receiveByte(uint8_t * buffer)
   if (buffer[0] != 0xF2) { // first byte must be 0xF2 to be read correctly.
     return -1;
   }
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
 
   memset(m_cube, 0, sizeof(m_cube));
 
@@ -134,7 +137,6 @@ int LedCube::receiveByte(uint8_t * buffer)
       }
     }
   }
-  pthread_mutex_unlock( &m_mutex);
   return 0;
 }
 
@@ -147,11 +149,10 @@ int LedCube::receiveRGB(uint32_t * cache)
     return -1;
   }
 
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
 
   memcpy(m_cube, cache, COLORPACKETSIZE);
 
-  pthread_mutex_unlock( &m_mutex);
   return 0;
 }
 
@@ -180,7 +181,7 @@ uint8_t * LedCube::cubeToByte      (uint8_t * cache)
 
   cache[0] = 242; // hex-to-decimal of 0xF2
 
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
 
   for (int x = 0; x < CUBESIZE; x++) {
     for (int y = 0; y < CUBESIZE; y++) {
@@ -191,7 +192,6 @@ uint8_t * LedCube::cubeToByte      (uint8_t * cache)
       }
     }
   }
-  pthread_mutex_unlock( &m_mutex);
   return cache;
 }
 
@@ -204,11 +204,10 @@ uint32_t * LedCube::cubeToRGB   (uint32_t * cache)
     return NULL;
   }
 
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
 
   memcpy(cache, m_cube, COLORPACKETSIZE);
 
-  pthread_mutex_unlock( &m_mutex);
   return cache;
 }
 

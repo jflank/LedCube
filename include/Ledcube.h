@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cstdint>
 #include <list>
+#include <mutex>
 
 typedef union {
   struct {
@@ -32,7 +33,7 @@ class LedCube
  public:
   LedCube     ();
   ~LedCube    ();
-  //  LedCube() ( const LedCube &obj);  // copy constructor
+  LedCube     (LedCube &obj);  // copy constructor
   int init    ();
   int clear   ();
   int drawCube();
@@ -65,7 +66,7 @@ class LedCube
   static const     int PACKETSIZE = (CUBESIZE * CUBESIZE + 1); //only need n^2 bytes
   static const     int COLORPACKETSIZE = (CUBESIZE * CUBESIZE * CUBESIZE *sizeof(uint32_t)); 
   uint32_t         m_cube[CUBESIZE][CUBESIZE][CUBESIZE];
-  pthread_mutex_t  m_mutex;
+  mutex            m_mutex;
   int              m_speed;
   list<LedCube*>   m_receivers; // group of cubes to copy to
 };

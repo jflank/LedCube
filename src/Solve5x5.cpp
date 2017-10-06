@@ -109,7 +109,7 @@ int Solve5::printBox()
 int Solve5::shareBox()
 {
   int move = 1;
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
   int x = 0, y = 0, z = 0;
   
   uint64_t bintotal = totaliter;
@@ -148,7 +148,7 @@ int Solve5::shareBox()
       }
     }
   }
-  pthread_mutex_unlock( &m_mutex);
+
   return 0;
 }
 

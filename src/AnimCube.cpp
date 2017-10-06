@@ -45,7 +45,7 @@ void AnimCube::defaultMem(void){
 //THIS IS RUN IN THE ANIMATION THREAD
 void AnimCube::animate(int inAnim, char ch) {
   //set the structure data that is used in other functions
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
   
   if(!AMEM.error){
     switch(inAnim){
@@ -93,7 +93,6 @@ void AnimCube::animate(int inAnim, char ch) {
   //generate and send the characters
   //hold the image
   AMEM.slowCount++;
-  pthread_mutex_unlock( &m_mutex);
 }
 //////////////
 //ANIMATIONS//

@@ -44,7 +44,7 @@ int Solve8Cube::shareBox()
   static int count = 0;
   int z;
   z = count % size;
-  pthread_mutex_lock( &m_mutex);
+  unique_lock<mutex> lock(m_mutex);
 
   for(int x=0; x < size; ++x) {
       for(int y=0; y < size; ++y) {
@@ -62,7 +62,6 @@ int Solve8Cube::shareBox()
       }
    }
 
-  pthread_mutex_unlock( &m_mutex);
   count ++;
   return 0;
 }
