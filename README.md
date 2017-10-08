@@ -10,11 +10,20 @@ make
 ./LedCube -g -s
 
 Options:
-	-h	Show this help message
-	-g	See The OpenGL threads only
-	-a	Set the solver speed (-a 1 is around 1 piece per second)
-	-s	See The solver in action
-	-p	Send data over the serial port
+        -h      Show this help message
+        -g      Show the cube in OpenGL <uijkm, control the rotation>.
+        -a #    Set the solver speed (-a 1 is around 1 piece per second)
+        -s [5|8]        Show 5x5 solver or the 8 queens solver
+        -p      Send data over the serial port
+        -z [0-10]       Run different animations
+                 0-2 - planes moving up/down left/right.
+                 3-4 - sine wave up/down left/right.
+                 5   - pulse.
+                 6   - rain.
+                 7   - spiral.
+                 8   - random Expand/contract.
+                 9   - display characters - ex: '-z 9HELLOWORLD'.
+                 10  - Current time, moving around the cube.
 
 
 Search for "Great Z Cube Wooden Puzzle Brain Teaser" for info on what is being solved.
