@@ -77,7 +77,7 @@ int Solve8Cube::init()
   return 0;
 }
 
-Solve8Cube::Solve8Cube() : LedCube()
+Solve8Cube::Solve8Cube() : LedCube(CUBESIZE)
 {
   return;
 }

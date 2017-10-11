@@ -26,7 +26,7 @@
 
 void signal_handler_IO (int status);    //definition of signal handler
 
-SerialCube::SerialCube() : LedCube()
+SerialCube::SerialCube() : LedCube(CUBESIZE)
 {
   init();
   return;
@@ -78,7 +78,7 @@ void SerialCube::init()
 
 int SerialCube::cubeToSerial()
 {
-  uint8_t buffer[PACKETSIZE];
+  uint8_t buffer[m_BWPacketSize];
   struct sigaction saio;               //definition of signal action
   struct termios oldtio, newtio;       //place for old and new port settings for serial port
 
@@ -117,10 +117,10 @@ int SerialCube::cubeToSerial()
 
   if (DEBUGLOG == 1) {
     cout << "Writing to serial port:";
-    coutByte(buffer, PACKETSIZE); 
+    coutByte(buffer, m_BWPacketSize); 
   }
   
-  for (int i = 0; i < PACKETSIZE; i ++) {
+  for (int i = 0; i < m_BWPacketSize; i ++) {
     //jhf double-check
     write(fd,&buffer[i],1);          //write 1 byte to the port
   }

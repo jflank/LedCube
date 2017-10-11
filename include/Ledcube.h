@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <list>
 #include <mutex>
+#include <vector>
 
 typedef union {
   struct {
@@ -19,7 +20,7 @@ typedef union {
 } rgb_t;
 
 /*
-  The copy constructor will just copy all protected data.
+  The copy constructor will just copy m_cube
 */
 
 #define CUBESIZE 8
@@ -32,15 +33,18 @@ class LedCube
 {
  public:
   LedCube     ();
+  LedCube     (uint32_t size);
   ~LedCube    ();
   LedCube     (LedCube &obj);  // copy constructor
-  int init    ();
+
+  int init    (uint32_t size);
   int clear   ();
   int drawCube();
 
-  int setSpeed(int newSpeed); 
-  int getSpeed(); 
-
+  int       setSpeed       (int newSpeed); 
+  int       getSpeed       (); 
+  uint32_t  getSize        ();
+  
   int       set            (int x, int y, int z, uint32_t val);
   uint32_t  get            (int x, int y, int z);
 
@@ -50,7 +54,7 @@ class LedCube
   void      coutByte       (const uint8_t * data, int data_length);
 
 
-  int       receiveRGB      (uint32_t * ); //colorized version sends RGB struct.
+  int       receiveRGB  (const uint32_t cache[]); //colorized version sends RGB struct.
   uint32_t *cubeToRGB       (uint32_t * ); 
 
 
@@ -63,12 +67,14 @@ class LedCube
  private:
 
  protected:
-  static const     int PACKETSIZE = (CUBESIZE * CUBESIZE + 1); //only need n^2 bytes
-  static const     int COLORPACKETSIZE = (CUBESIZE * CUBESIZE * CUBESIZE *sizeof(uint32_t)); 
-  uint32_t         m_cube[CUBESIZE][CUBESIZE][CUBESIZE];
+  uint32_t m_BWPacketSize;      //only need n^2 bytes+ 1 for black and white
+  uint32_t m_RGBPacketSize;     //need n^3 bytes * sizeof(RGB)
+  vector< vector < vector <uint32_t>>> m_cube; // 3d cube.
+  uint32_t         m_size;      // size of one length of the cube.
   mutex            m_mutex;
   int              m_speed;
-  list<LedCube*>   m_receivers; // group of cubes to copy to
+
+  list<LedCube*>   m_receivers; // group of cubes to copy to 
 };
 
 

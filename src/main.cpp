@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
   char *avalue = NULL;
   char *zvalue = NULL;
   char *svalue = NULL;
+  char *gvalue = NULL;
   int c;
 
   opterr = 0;
@@ -79,9 +80,13 @@ int main(int argc, char *argv[])
   el::Loggers::reconfigureAllLoggers(conf);
 
   LOG(INFO) << "Starting" ;
-  while ((c = getopt (argc, argv, "egs:pa:z:")) != -1) {
+  while ((c = getopt (argc, argv, "egs:pa:z:G:")) != -1) {
     switch (c) {
     case 'g':
+      gflag = 1;
+      break;
+    case 'G':
+      gvalue = optarg;
       gflag = 1;
       break;
     case 's':
@@ -125,7 +130,12 @@ int main(int argc, char *argv[])
   }
 
   if (gflag) {
-    myGLCubeP = new GLCube();
+    if (gvalue != NULL) {
+      uint32_t gval = atoi(gvalue);
+      myGLCubeP = new GLCube(gval);
+    } else {
+      myGLCubeP = new GLCube();
+    }
     pflag && myGLCubeP->cubeAddReceiver(myPortCubeP);
 
     ret = pthread_create( &thread1, NULL, mainGL, NULL);

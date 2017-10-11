@@ -20,10 +20,14 @@
 
 using namespace std;
 
+LedCube::LedCube (uint32_t size)
+{
+  init(size);
+}
+
 LedCube::LedCube ()
 {
-  m_speed = 0; // default speed is human visible
-  init();
+  init(CUBESIZE);
 }
 
 LedCube::~LedCube ()
@@ -37,25 +41,31 @@ LedCube::~LedCube ()
  */
 LedCube::LedCube( LedCube &obj)
 {
-  m_speed = 0; // default speed is human visible
-
   unique_lock<mutex> lock1(obj.m_mutex, std::defer_lock);
   unique_lock<mutex> lock2(    m_mutex, std::defer_lock);
 
   // lock both unique_locks without deadlock
   lock(lock1, lock2);
 
-  memcpy(m_cube, obj.m_cube, sizeof(m_cube));
+  init(obj.m_size); 
+
+  //  memcpy(m_cube, obj.m_cube, sizeof(m_cube));
+  m_cube = obj.m_cube; //TODO:  I can't believe that copying a 3d vector would be this easy...
   
+}
+
+uint32_t LedCube::getSize()
+{
+  return m_size;
 }
 
 /* only works in monochrome */
 int LedCube::drawCube() {
   int x,y,z;
   unique_lock<mutex> lock(m_mutex);
-  for (z = 0; z < CUBESIZE; z ++) {
-    for (y = 0; y < CUBESIZE; y ++) {
-      for (x = 0; x < CUBESIZE; x ++) {
+  for (z = 0; z < m_size; z ++) {
+    for (y = 0; y < m_size; y ++) {
+      for (x = 0; x < m_size; x ++) {
 	cout << (m_cube[x][y][z] > 0 ? "1":"0");
       }
       cout  << " ";
@@ -66,12 +76,25 @@ int LedCube::drawCube() {
   return 0;
 }
 
-int LedCube::init()
+int LedCube::init(uint32_t size)
 {
+  m_speed = 0; // default speed is human visible
+  m_size = size;
+  m_RGBPacketSize   = (size * size * size); 
+  m_BWPacketSize    = (size * size + 1); 
+
+  //allocate m_cube
+  m_cube.resize(size);
+  for (int i = 0; i < size; i ++) {
+    m_cube[i].resize(size);
+    for (int j = 0; j < size; j ++) {
+      m_cube[i][j].resize(size);
+    }
+  }
   int x,y,z;
-  for (x = 0; x < CUBESIZE; x ++) {
-    for (y = 0; y < CUBESIZE; y ++) {
-      for (z = 0; z < CUBESIZE; z ++) {
+  for (x = 0; x < m_size; x ++) {
+    for (y = 0; y < m_size; y ++) {
+      for (z = 0; z < m_size; z ++) {
 	m_cube[x][y][z] = CUBEOFF;
       }
     }
@@ -85,9 +108,9 @@ int LedCube::init()
 */
 int LedCube::set(int x, int y, int z, uint32_t val)
 {
-  if (x >= CUBESIZE || x < 0 ||
-      y >= CUBESIZE || y < 0 ||
-      z >= CUBESIZE || z < 0) {
+  if (x >= m_size || x < 0 ||
+      y >= m_size || y < 0 ||
+      z >= m_size || z < 0) {
     assert(0);
     return 0;
   }
@@ -100,9 +123,9 @@ int LedCube::set(int x, int y, int z, uint32_t val)
  */
 uint32_t LedCube::get(int x, int y, int z)
 {
-  if (x >= CUBESIZE || x < 0 ||
-      y >= CUBESIZE || y < 0 ||
-      z >= CUBESIZE || z < 0) {
+  if (x >= m_size || x < 0 ||
+      y >= m_size || y < 0 ||
+      z >= m_size || z < 0) {
     assert(0);
     return 0;
   }
@@ -126,14 +149,10 @@ int LedCube::receiveByte(uint8_t * buffer)
   }
   unique_lock<mutex> lock(m_mutex);
 
-  memset(m_cube, 0, sizeof(m_cube));
-
-  for (int x = 0; x < CUBESIZE; x++) {
-    for (int y = 0; y < CUBESIZE; y++) {
-      for (int z = 0; z < CUBESIZE; z++) {
-	if ((buffer[x+8*y+1] & (0x01 << z))) {
-	  m_cube[x][y][z] = CUBEON;
-	}
+  for (int x = 0; x < m_size; x++) {
+    for (int y = 0; y < m_size; y++) {
+      for (int z = 0; z < m_size; z++) {
+	m_cube[x][y][z] = (buffer[x+8*y+1] & (0x01 << z)) ? CUBEON : CUBEOFF;
       }
     }
   }
@@ -143,15 +162,21 @@ int LedCube::receiveByte(uint8_t * buffer)
 /*
  * color version, without any headers
  */
-int LedCube::receiveRGB(uint32_t * cache)
+int LedCube::receiveRGB(const uint32_t cache[])
 {
-  if (cache == 0) {
-    return -1;
-  }
 
   unique_lock<mutex> lock(m_mutex);
 
-  memcpy(m_cube, cache, COLORPACKETSIZE);
+  int RGBPacketSize = 0;
+
+  for (int x = 0; x < m_size; x++) {
+    for (int y = 0; y < m_size; y++) {
+      for (int z = 0; z < m_size; z++) {
+	m_cube[x][y][z] = cache[RGBPacketSize];
+	RGBPacketSize ++;
+      }
+    }
+  }
 
   return 0;
 }
@@ -173,19 +198,19 @@ void LedCube::coutByte(const uint8_t * data, int data_length)
 // than hard-code it in each file
 
 /* 
- * change to monochrome byte stream 
+ * change to monochrome byte stream starting with 0xF2
  */
 uint8_t * LedCube::cubeToByte      (uint8_t * cache)
 {
-  memset(cache, 0x00, PACKETSIZE);
+  memset(cache, 0x00, m_BWPacketSize);
 
   cache[0] = 242; // hex-to-decimal of 0xF2
 
   unique_lock<mutex> lock(m_mutex);
 
-  for (int x = 0; x < CUBESIZE; x++) {
-    for (int y = 0; y < CUBESIZE; y++) {
-      for (int z = 0; z < CUBESIZE; z++) {
+  for (int x = 0; x < m_size; x++) {
+    for (int y = 0; y < m_size; y++) {
+      for (int z = 0; z < m_size; z++) {
 	if (m_cube[x][y][z] > 0) { 
 	  cache[x+8*y+1] |= 0x01 << z;
 	}
@@ -206,14 +231,23 @@ uint32_t * LedCube::cubeToRGB   (uint32_t * cache)
 
   unique_lock<mutex> lock(m_mutex);
 
-  memcpy(cache, m_cube, COLORPACKETSIZE);
+  int RGBPacketSize = 0;
+
+  for (int x = 0; x < m_size; x++) {
+    for (int y = 0; y < m_size; y++) {
+      for (int z = 0; z < m_size; z++) {
+	cache[RGBPacketSize] = m_cube[x][y][z]; 
+	RGBPacketSize ++;
+      }
+    }
+  }
 
   return cache;
 }
 
 uint8_t * LedCube::cubeToByteAlloc(void)
 {
-  uint8_t * buffer = new uint8_t [PACKETSIZE];
+  uint8_t * buffer = new uint8_t [m_BWPacketSize];
   cubeToByte(buffer);
   return buffer;
 }
@@ -223,10 +257,8 @@ uint8_t * LedCube::cubeToByteAlloc(void)
  */
 int LedCube::cubeToReceivers()
 {
-  for (std::list<LedCube*>::iterator it=m_receivers.begin();
-       it != m_receivers.end();
-       ++it) {
-    cubeToCube(*it);
+  for (auto& it : m_receivers) {
+    cubeToCube(it);
   }
 }  
 
@@ -247,7 +279,7 @@ int LedCube::cubeAddReceiver(LedCube *cubeP)
  */
 int LedCube::cubeToCube(LedCube * cubeP)
 {
-  uint32_t buffer[PACKETSIZE*CUBESIZE];
+  uint32_t buffer[m_RGBPacketSize];
   if (cubeP == NULL) {
     return 1;
   }
@@ -279,16 +311,22 @@ int LedCube::cubeToFile(const char * filename)
      return 1;
    }
    outfile.open(filename, ios::out | ios::binary);
-   uint8_t buffer[PACKETSIZE];
+   uint8_t buffer[m_BWPacketSize];
    cubeToByte(buffer);
 
-   outfile.write((const char*)buffer, PACKETSIZE);
+   outfile.write((const char*)buffer, m_BWPacketSize);
    return 0;
 }
 
 int LedCube::clear()
 {
-    memset(m_cube, 0, sizeof(m_cube));
-    return 0;
+  for (int x = 0; x < m_size; x ++) {
+    for (int y = 0; y < m_size; y ++) {
+      for (int z = 0; z < m_size; z ++) {
+	m_cube[x][y][z] = CUBEOFF;
+      }
+    }
+  }
+  return 0;
 }
   

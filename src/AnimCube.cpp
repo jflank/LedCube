@@ -900,7 +900,7 @@ void AnimCube::clearDummy(void){
   memset(dummyCube, 0, sizeof(dummyCube));
 }
 
-AnimCube::AnimCube() : LedCube(){
+AnimCube::AnimCube() : LedCube(CUBESIZE){
   m_speed = 1;
   defaultMem();
 }

@@ -69,7 +69,7 @@ const char * directions[] =
 int Solve5::init()
 {
   int i,j,k;
-  LedCube::init();
+  LedCube::init(CUBESIZE);
 
   numiter   = 0;
   totaliter = 0;
@@ -271,7 +271,7 @@ int Solve5::solver(int wormID)
   return 1;
 }
 
-Solve5::Solve5() : LedCube() {
+Solve5::Solve5() : LedCube(CUBESIZE) {
   return;
 }
 
