@@ -63,6 +63,7 @@ class LedCube
   int       cubeToCube      (LedCube * cubeP); //just a couple of memcpy's
   int       cubeToFile      (const char*  filename);
 
+  virtual   int main        ( int argc = 0, char **argv = NULL ) { return 0; } //main isn't used in the base class
   
  private:
 

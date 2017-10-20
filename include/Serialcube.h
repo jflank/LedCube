@@ -6,12 +6,13 @@
 
 class SerialCube : public LedCube {
  public:
-  SerialCube();
-  ~SerialCube();
+  SerialCube      ();
+  ~SerialCube     ();
 
-  void init();
+  void init       ();
   int cubeToSerial(); // just calls cubetoFile with the serial port string
   
+  int  main       (int argc, char **argv);
   
  private:
   
@@ -26,9 +27,5 @@ class SerialCube : public LedCube {
   int fd;
  
 };
-
-extern SerialCube * myPortCubeP;
-
-extern void * mainSerial(void * ptr);
 
 #endif //_H_SERIALCUBE

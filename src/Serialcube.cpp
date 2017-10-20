@@ -130,11 +130,11 @@ int SerialCube::cubeToSerial()
 }
 
 
-void * mainSerial (void * ptr)
+int SerialCube::main        ( int argc, char **argv)
 {
   while (1) {
     usleep(100000); // sleep for 0.10 seconds
-    myPortCubeP->cubeToSerial();
+    cubeToSerial();
   }
  
   return 0;

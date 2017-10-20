@@ -177,25 +177,25 @@ bool Solve8Cube::backtrack(int& column)
 }
 
 
-void * mainsolve8(void * ptr)
+int Solve8Cube::main        ( int argc, char **argv)
 {
     int board_size = CUBESIZE;
     int solution_count = 1000;
 
     cout << "Starting Solve 8 Queens 1000 times\n";
-    my8CubeP->init();
+    init();
     
-    my8CubeP->printSol();  
+    printSol();  
 
     int column = 0;
-    while (solution_count-- > 0 && my8CubeP->backtrack(column)) {
+    while (solution_count-- > 0 && backtrack(column)) {
       //      if (m_speed > 0 && m_speed < 1000000) {
       //      usleep(1000000 - m_speed);
       //      }
       usleep(1000000);
-      my8CubeP->printSol();
-      my8CubeP->shareBox();
-      my8CubeP->cubeToReceivers();
+      printSol();
+      shareBox();
+      cubeToReceivers();
     }
     return 0;
 }

@@ -261,7 +261,11 @@ int LedCube::cubeToReceivers()
     cubeToCube(it);
   }
 }  
-
+/*
+ * TODO: This just adds a Cube Receiver. If a receiving cube is removed or 
+ * destroyed, there is no check. As creating/destroying cubes are only done
+ * at the beginning/end of the program, it's not a problem yet.  
+ */
 int LedCube::cubeAddReceiver(LedCube *cubeP)
 {
   m_receivers.push_back(cubeP);

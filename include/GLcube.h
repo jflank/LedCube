@@ -17,6 +17,7 @@ class GLCube : public LedCube {
   void rotateCube  (void);
   void clickLED    (int mouseX, int mouseY, int bOn);
   void keyboard    (unsigned char key, int x, int y);
+  int  main        ( int argc = 0, char **argv = NULL );
   
  private:
   void init();
@@ -28,14 +29,12 @@ class GLCube : public LedCube {
   double m_rot_z;
   double m_rot_y;
   double m_rot_x;
-  
+
  protected:
   
   
 };
 
-extern GLCube * myGLCubeP;
-
-extern void * mainGL(void * ptr);
+extern GLCube     * myGLCubeP;
 
 #endif //_H_GLCUBE

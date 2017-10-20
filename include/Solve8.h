@@ -8,25 +8,22 @@
 
 class Solve8Cube : public LedCube {
  public:
-  Solve8Cube();
-  ~Solve8Cube();
+  Solve8Cube    ();
+  ~Solve8Cube   ();
   
-  int init();
-  void printSol();
+  int  init     ();
+  void printSol ();
   bool backtrack(int& column);
-  int shareBox ();
+  int  shareBox ();
+  int  main     (int argc, char **argv);
   
  private:
-  bool** spaces;
+  bool**      spaces;
   vector<int> state;
-  int size;
+  int         size;
   
-  bool isSafe   (int row, int column);
+  bool isSafe  (int row, int column);
 
 };
-
-extern Solve8Cube * my8CubeP;
-
-void * mainsolve8(void * ptr);
 
 #endif //_H_SOLVE8

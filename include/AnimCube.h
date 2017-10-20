@@ -71,7 +71,7 @@ class AnimCube : public LedCube {
   ~AnimCube();
   
   void defaultMem       (void);
-  void animate          (int, char );
+  void animate          (char );
   void wipeFullPlane    (axes_t);
   void loadPlane        (axes_t, int);
   void loadArray        (int *array);
@@ -97,8 +97,16 @@ class AnimCube : public LedCube {
 			 double outMin, double outMax);
   void clearDummy       (void);
 
+  void setStr           (string);
+  void setAnim          (int);
+  int  main             (int argc, char **argv);
+  void displayString    ();
+  
  private:
-
+  int    m_anim;
+  string m_str;
+  int    strpos;
+  
  protected:
 
   int dummyCube[8][8][8];
@@ -108,9 +116,5 @@ class AnimCube : public LedCube {
 
   
 };
-
-extern AnimCube * myAnimCubeP;
-
-extern void * mainAnim(void * ptr);
 
 #endif //_H_ANIMCUBE

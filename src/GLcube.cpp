@@ -99,10 +99,10 @@ void GLCube::keyboard(unsigned char key, int x, int y)
       m_sphereSize += 0.01;
       break;
     case ' ':
-      myGLCubeP->clear();
+      clear();
       break;
     case 'p':
-      myGLCubeP->cubeToFile("GLCUBE.bin");
+      cubeToFile("GLCUBE.bin");
       break;
     case 0x1B:
     case 'q':
@@ -250,7 +250,7 @@ void display(void)
   
 }
 
-void keyboard(unsigned char key, int x, int y)
+void GLkeyboard(unsigned char key, int x, int y)
 {
   myGLCubeP->keyboard(key, x, y);
 }
@@ -268,12 +268,12 @@ void mouse(int btn, int state, int x, int y)
   myGLCubeP->cubeToReceivers();
 }
 
-void * mainGL(void * ptr)
+int GLCube::main(int argc, char **argv)
 {
-  int argc = 1;
-  char *argv[1] = {(char*)"Something"};
+  int glut_argc = 1;
+  char *glut_argv[1] = {(char*)"Something"};
 
-  glutInit(&argc, argv);
+  glutInit(&glut_argc, glut_argv);
   glutInitWindowSize(WINDOWX, WINDOWY);
   glutInitWindowPosition(10,10);
   
@@ -281,7 +281,7 @@ void * mainGL(void * ptr)
   glutCreateWindow("GL Cube");
 
   glutMouseFunc(mouse);
-  glutKeyboardFunc(keyboard);
+  glutKeyboardFunc(GLkeyboard);
   glutDisplayFunc(display);
   glutIdleFunc(display);
   glutReshapeFunc(resize);
@@ -310,10 +310,7 @@ void * mainGL(void * ptr)
   glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
   glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess); 
 
-  glutMainLoop();
-  while (1) {
-    
-  }
+  glutMainLoop(); // doesn't return. exit(0) just kills the thread.
   
   return(0);
 }

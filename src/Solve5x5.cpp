@@ -275,15 +275,14 @@ Solve5::Solve5() : LedCube(CUBESIZE) {
   return;
 }
 
-
-void * mainsolve5(void * ptr) 
+int Solve5::main        ( int argc, char **argv)
 {
   cout << "Starting Solve5\n";
-  my5CubeP->init();
-  my5CubeP->printBox();
+  init();
+  printBox();
   
-  my5CubeP->solver(0);
-  my5CubeP->printBox();
+  solver(0);
+  printBox();
   return 0;
 }
 

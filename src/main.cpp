@@ -15,8 +15,9 @@
 #include <GL/glx.h>
 #include <GL/glext.h>
 #include <GL/glu.h>
-#include <pthread.h>
 #include <errno.h>
+#include "LedcubeFactory.h"
+
 #include "Ledcube.h"
 #include "Serialcube.h"
 #include "GLcube.h"
@@ -51,16 +52,15 @@ static void show_usage()
        << endl;
 }
 
-SerialCube * myPortCubeP  = NULL;
-Solve5     * my5CubeP     = NULL;
 GLCube     * myGLCubeP    = NULL;
-Solve8Cube * my8CubeP     = NULL;
-AnimCube   * myAnimCubeP  = NULL;
 
 int main(int argc, char *argv[])
 {
 
-  pthread_t thread1, thread2, thread3, thread4, thread5;
+  SerialCube * myPortCubeP  = NULL;
+  Solve5     * my5CubeP     = NULL;
+  Solve8Cube * my8CubeP     = NULL;
+  AnimCube   * myAnimCubeP  = NULL;
   int ret;
   int gflag = 0;
   int aflag = 0;
@@ -74,6 +74,8 @@ int main(int argc, char *argv[])
   char *gvalue = NULL;
   int c;
 
+  LedCubeFactory * cubesP = &LedCubeFactory::Get();
+  
   opterr = 0;
 
   el::Configurations conf("./log.conf");
@@ -122,41 +124,26 @@ int main(int argc, char *argv[])
   }
   
   if (pflag) {
-    myPortCubeP = new SerialCube();
-    ret = pthread_create( &thread3, NULL, mainSerial, NULL);
-    if (ret != 0) {
-      return 1;
-    }
+    myPortCubeP = (SerialCube*) cubesP->Create('p');
   }
 
   if (gflag) {
+    uint32_t gval = 0;
     if (gvalue != NULL) {
       uint32_t gval = atoi(gvalue);
-      myGLCubeP = new GLCube(gval);
-    } else {
-      myGLCubeP = new GLCube();
-    }
+    } 
+    myGLCubeP = (GLCube*) cubesP->Create('g');
     pflag && myGLCubeP->cubeAddReceiver(myPortCubeP);
-
-    ret = pthread_create( &thread1, NULL, mainGL, NULL);
-    if (ret != 0) {
-      return 1;
-    }
   }
   
   if (sflag && svalue[0] == '8') {
-    my8CubeP = new Solve8Cube();
+    my8CubeP = (Solve8Cube*) cubesP->Create('8');
     pflag && my8CubeP->cubeAddReceiver(myPortCubeP);
-    gflag && my8CubeP->cubeAddReceiver(myGLCubeP);
-    
-    ret = pthread_create( &thread3, NULL, mainsolve8, NULL);
-    if (ret != 0) {
-      return 1;
-    }
+    gflag && my8CubeP->cubeAddReceiver(myGLCubeP);    
   }
   
   if (sflag && svalue[0] == '5') {
-    my5CubeP = new Solve5();
+    my5CubeP = (Solve5*)cubesP->Create('5');
     pflag && my5CubeP->cubeAddReceiver(myPortCubeP);
     gflag && my5CubeP->cubeAddReceiver(myGLCubeP);
 
@@ -164,29 +151,27 @@ int main(int argc, char *argv[])
       int spd = strtol(avalue, &avalue, 10);
       my5CubeP->setSpeed(spd);
     }
-    ret = pthread_create( &thread2, NULL, mainsolve5, NULL);
-    if (ret != 0) {
-      return 1;
-    }
   }
 
   if (zvalue) {
-    myAnimCubeP = new AnimCube();
+    string str = "";
+    int action = strtol(zvalue, NULL, 10);
+    if (action == 9) {
+      str = (char*) &zvalue[1]; // skip the 9, as in "9Hello" should just be "Hello"
+    }
+    myAnimCubeP = (AnimCube*) cubesP->Create('z');
+    myAnimCubeP->setAnim(action);
+    myAnimCubeP->setStr(str);
+    
     pflag && myAnimCubeP->cubeAddReceiver(myPortCubeP);
     gflag && myAnimCubeP->cubeAddReceiver(myGLCubeP);
 
-    ret = pthread_create( &thread1, NULL, mainAnim, zvalue);
-    if (ret != 0) {
-      return 1;
-    }
   }
 
-  if (gflag) pthread_join( thread1, NULL);
-  if (sflag) pthread_join( thread2, NULL);
-  if (eflag) pthread_join( thread3, NULL);
-  if (pflag) pthread_join( thread4, NULL);
-  if (zflag) pthread_join( thread5, NULL);
-
+  // Always run until program is killed. 
+  while (1) {    
+    usleep(1000000); // sleep 1 second
+  }
   return 0;
 
 }

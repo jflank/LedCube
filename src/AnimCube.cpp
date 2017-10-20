@@ -42,13 +42,25 @@ void AnimCube::defaultMem(void){
   AMEM.disappearAxis = XAXIS;
 }
 
+void AnimCube::setAnim(int anim)
+{
+  unique_lock<mutex> lock(m_mutex);
+  m_anim = anim;
+}
+
+void AnimCube::setStr(string str)
+{
+  unique_lock<mutex> lock(m_mutex);
+  m_str = str;
+}
+
 //THIS IS RUN IN THE ANIMATION THREAD
-void AnimCube::animate(int inAnim, char ch) {
+void AnimCube::animate(char ch) {
   //set the structure data that is used in other functions
   unique_lock<mutex> lock(m_mutex);
   
   if(!AMEM.error){
-    switch(inAnim){
+    switch(m_anim){
     case 0: //wipe X
       wipeFullPlane(XAXIS);
       break;
@@ -77,7 +89,9 @@ void AnimCube::animate(int inAnim, char ch) {
       randomExpand();
       break;
     case 9:
-      type(ch);
+      //      type(ch);
+      AMEM.disappearAxis = ZAXIS;
+      displayString();
       break;
     case 10:
       clockA();
@@ -297,10 +311,10 @@ void AnimCube::disappear(void){
 	m_cube[i][7][j] = dummyCube[i][7][j] ? CUBEON : CUBEOFF;
 	break;
       case YAXIS:
-	m_cube[7][i][j] = dummyCube[7][i][j] ? CUBEON : CUBEOFF;
+	m_cube[7][i][j] = dummyCube[i][7][j] ? CUBEON : CUBEOFF;
 	break;
       case ZAXIS:
-	m_cube[j][i][7] = dummyCube[j][i][7] ? CUBEON : CUBEOFF;
+	m_cube[7-i][j][7] = dummyCube[i][7][j] ? CUBEON : CUBEOFF;
 	break;
       }
 			
@@ -758,6 +772,27 @@ void AnimCube::mouse(void){
 }	
 #endif
 
+void AnimCube::displayString()
+{
+ 
+  usleep(100000); // sleep 0.1 second
+  if (AMEM.disappearDone) {
+    char in = toupper(m_str[strpos]);
+    cout << "Current Char: " << in << endl;
+    loadArray(IMG(in));
+    AMEM.disappearDone = 0;
+    AMEM.slowCount = 0;
+    strpos ++;
+    if (strpos >= m_str.size())
+      strpos = 0;
+  }
+    
+  if(AMEM.slowCount > map(m_speed, 0, 10, 5, 1)){
+    disappear();
+    AMEM.slowCount = 0;
+  }
+}
+
 //CAPTURE AND DISPLAY TEXT FROM KEYBOARD
 void AnimCube::type(char in)
 {
@@ -902,28 +937,28 @@ void AnimCube::clearDummy(void){
 
 AnimCube::AnimCube() : LedCube(CUBESIZE){
   m_speed = 1;
+  m_anim = 0;
+  m_str = "";
   defaultMem();
 }
 
-void *mainAnim(void* ptr)
+int AnimCube::main(int argc, char **argv)
 {
-  char * str = (char*) ptr;
-  int action = strtol(str, NULL, 10);
   int i = 0;
   int j = 0;
-  int ich = 1;
-  char ch = str[ich];
+  int ich = 0;
+  char ch = m_str[ich];
 
-  cout << "Calling Animation with " << str << endl;
-  
   while (1) {    
     usleep(50000); // sleep 0.1 second
+      /*
     if (i >20) {
       i = 0;
-      if (action == 9) {
+
+      if (m_anim == 9) {
 	if (j > 2) {
-	  if (str[ich] != '\0') {
-	    ch = str[ich];
+	  if (m_str[ich] != '\0') {
+	    ch = m_str[ich];
 	    cout << "Current Char: " << ch << endl;
 	    ich ++;
 	  }
@@ -933,9 +968,9 @@ void *mainAnim(void* ptr)
       }
     }
     i++;
-
-    //    myAnimCubeP->drawCube();  
-    myAnimCubeP->animate(action, ch);
-    myAnimCubeP->cubeToReceivers();
+*/
+    //    drawCube();  
+    animate(ch);
+    cubeToReceivers();
   }
 }
