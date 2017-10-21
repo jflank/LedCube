@@ -11,10 +11,10 @@ CPPFLAGS=-g -std=c++11 -ggdb
 LDFLAGS=-g 
 RM=rm -f
 
-_DEPS=Ledcube.h GLcube.h Solve5x5.h Solve8.h Serialcube.h AnimCube.h LedcubeFactory.h
+_DEPS=Ledcube.h GLcube.h Solve5x5.h Solve8.h Serialcube.h AnimCube.h LedcubeFactory.h Dijkstracube.h
 DEPS=$(patsubst %,$(IDIR)/%,$(_DEPS))
 
-SRCS=main.cpp Ledcube.cpp GLcube.cpp Solve5x5.cpp easylogging++.cpp Solve8.cpp Serialcube.cpp AnimCube.cpp Images.cpp LedcubeFactory.cpp
+SRCS=Dijkstracube.cpp main.cpp Ledcube.cpp GLcube.cpp Solve5x5.cpp easylogging++.cpp Solve8.cpp Serialcube.cpp AnimCube.cpp Images.cpp LedcubeFactory.cpp 
 
 _OBJS = $(subst .cpp,.o,$(SRCS)) 
 OBJS=$(patsubst %,$(ODIR)/%,$(_OBJS))

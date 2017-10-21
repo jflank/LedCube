@@ -24,6 +24,7 @@
 #include "Solve5x5.h"
 #include "Solve8.h"
 #include "AnimCube.h"
+#include "Dijkstracube.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -34,9 +35,14 @@ static void show_usage()
   cerr << "Usage: " << endl;
   cout << "Options:\n"
        << "\t-h\tShow this help message\n"
-       << "\t-g\tShow the cube in OpenGL <uijkm, control the rotation>.\n"
+       << "\t-g\tShow the cube in OpenGL <uijkm for rotation. -/= for size>.\n"
        << "\t-a #\tSet the solver speed (-a 1 is around 1 piece per second)\n"
-       << "\t-s [5|8]\tShow 5x5 solver or the 8 queens solver\n"
+       << "\t-s [5|8|d2|d3]\n"
+       << "\t\t 5   - Show 5x5 solver\n"
+       << "\t\t 8   - Show 8 queens solver\n"
+       << "\t\t d2  - Dijskstra's in 2d - edges unidirectional\n"
+       << "\t\t d3  - Dijskstra's in 3d - edges unidirectional\n"
+       << "\t\t d30 - Dijskstra's in 3d - edges going in both directions\n"
        << "\t-p\tSend data over the serial port\n"
        << "\t-z [0-10]\tRun different animations\n"
        << "\t\t 0-2 - planes moving up/down left/right.\n"
@@ -47,7 +53,7 @@ static void show_usage()
        << "\t\t 8   - random Expand/contract.\n"
        << "\t\t 9   - display characters - ex: '-z 9HELLOWORLD'.\n"
        << "\t\t 10  - Current time, moving around the cube.\n"
-    
+       << "\t-S #\tSet the size of the Cube (supported for g right now.)\n" 
     
        << endl;
 }
@@ -61,6 +67,7 @@ int main(int argc, char *argv[])
   Solve5     * my5CubeP     = NULL;
   Solve8Cube * my8CubeP     = NULL;
   AnimCube   * myAnimCubeP  = NULL;
+  DJCube     * myDJCubeP  = NULL;
   int ret;
   int gflag = 0;
   int aflag = 0;
@@ -71,9 +78,9 @@ int main(int argc, char *argv[])
   char *avalue = NULL;
   char *zvalue = NULL;
   char *svalue = NULL;
-  char *gvalue = NULL;
   int c;
-
+  int size = 8;
+  
   LedCubeFactory * cubesP = &LedCubeFactory::Get();
   
   opterr = 0;
@@ -82,14 +89,13 @@ int main(int argc, char *argv[])
   el::Loggers::reconfigureAllLoggers(conf);
 
   LOG(INFO) << "Starting" ;
-  while ((c = getopt (argc, argv, "egs:pa:z:G:")) != -1) {
+  while ((c = getopt (argc, argv, "egs:pa:z:S:")) != -1) {
     switch (c) {
     case 'g':
       gflag = 1;
       break;
-    case 'G':
-      gvalue = optarg;
-      gflag = 1;
+    case 'S':
+      size = atoi(optarg);
       break;
     case 's':
       sflag = 1;
@@ -122,17 +128,14 @@ int main(int argc, char *argv[])
       return 1;
     }
   }
-  
+
+  //TODO: move all cube add receiver registration to the LedFactory
   if (pflag) {
     myPortCubeP = (SerialCube*) cubesP->Create('p');
   }
 
   if (gflag) {
-    uint32_t gval = 0;
-    if (gvalue != NULL) {
-      uint32_t gval = atoi(gvalue);
-    } 
-    myGLCubeP = (GLCube*) cubesP->Create('g');
+    myGLCubeP = (GLCube*) cubesP->Create('g', size);
     pflag && myGLCubeP->cubeAddReceiver(myPortCubeP);
   }
   
@@ -140,6 +143,17 @@ int main(int argc, char *argv[])
     my8CubeP = (Solve8Cube*) cubesP->Create('8');
     pflag && my8CubeP->cubeAddReceiver(myPortCubeP);
     gflag && my8CubeP->cubeAddReceiver(myGLCubeP);    
+  }
+
+  if (sflag && svalue[0] == 'd') {
+    int action = strtol(&svalue[1], NULL, 10);
+    if (action != 2 && action != 3 && action != 30) {
+      action = 2;
+    }
+    myDJCubeP = (DJCube*) cubesP->Create('d', size);
+    myDJCubeP->setOption(action);
+    pflag && myDJCubeP->cubeAddReceiver(myPortCubeP);
+    gflag && myDJCubeP->cubeAddReceiver(myGLCubeP);    
   }
   
   if (sflag && svalue[0] == '5') {

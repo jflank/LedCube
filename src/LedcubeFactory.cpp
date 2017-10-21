@@ -5,6 +5,7 @@
 #include "Solve5x5.h"
 #include "Solve8.h"
 #include "AnimCube.h"
+#include "Dijkstracube.h"
 
 using namespace std;
 
@@ -43,6 +44,9 @@ LedCube* LedCubeFactory::Create(char type, int size)
       break;
     case 'z':
       cubeP = new AnimCube();
+      break;
+    case 'd':
+      cubeP = new DJCube(size);
       break;
     }
   

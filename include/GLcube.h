@@ -1,3 +1,8 @@
+/*
+ * Author Joshua Flank
+ * September 2017
+ * OpenGL view of nxnxn LED cube.
+ */
 #ifndef _H_GLCUBE
 #define _H_GLCUBE
 
@@ -20,7 +25,7 @@ class GLCube : public LedCube {
   int  main        ( int argc = 0, char **argv = NULL );
   
  private:
-  void init();
+  void init(); // Not virtual from LedCube.
   
   double m_pixelDist;
   double m_pixelSize;
