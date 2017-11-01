@@ -1,4 +1,5 @@
 /*
+ * Copyright Joshua Flank (c) 2017 
  * Author Joshua Flank
  * September 2017
  * OpenGL view of nxnxn LED cube.

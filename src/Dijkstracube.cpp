@@ -1,4 +1,6 @@
-/*
+/* 
+ * Copyright Joshua Flank (c) 2017 
+ * 
  * Author Joshua Flank
  * October 2017
  * 

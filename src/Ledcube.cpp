@@ -1,7 +1,9 @@
 /*
+ * Copyright Joshua Flank (c) 2017 
+ *
  * Author Joshua Flank
  * September 2017
- * the purpose of this file is to just model the 8x8x8 cube 
+ * The purpose of this file is to just model the 8x8x8 cube 
  */
 #include <stdio.h>
 #include <stdlib.h>
