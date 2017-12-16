@@ -106,3 +106,5 @@ Target UID: D17E013F41E83A
 Disconnected!
 joshua:~/Programs/py/stcgal$ 5~^C
 
+
+If you want to build your own HW 8x8x8 LED cube, check out: https://www.youtube.com/watch?v=iChNCz5YP-E&t=1990s
