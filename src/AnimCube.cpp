@@ -424,29 +424,29 @@ void AnimCube::sideSine(void){
 
 //RANDOM RAIN EFFECT
 void AnimCube::rain(void){
-  int rX, rY, x, y, z;
+  int rX, rZ, x, y, z;
   int count = 0;
   AMEM.disappearAxis = 2;
 
   if(AMEM.rainDrops > rand()%4+0){
     rX = rand()%8+0;
-    rY = rand()%8+0;
-    while(m_cube[rX][rY][7] != 0 && count < 100){
+    rZ = rand()%8+0;
+    while(m_cube[rX][7][rZ] != 0 && count < 100){
       rX = rand()%8+0;
-      rY = rand()%8+0;
+      rZ = rand()%8+0;
       count++;
     }
-    m_cube[rX][rY][7] = 1;
+    m_cube[rX][7][rZ] = 1;
     AMEM.rainDrops = 0;
   }
 
   if(AMEM.slowCount > 6){
     for(x = 0; x < CUBESIZE; x++){
-      for(y = 0; y < CUBESIZE; y++){
-	for(z = 0; z < CUBESIZE-1; z++){
-	  m_cube[x][y][z] = m_cube[x][y][z+1];
+      for(z = 0; z < CUBESIZE; z++){
+	for(y = 0; y < CUBESIZE-1; y++){
+	  m_cube[x][y][z] = m_cube[x][y+1][z];
 	  if(m_cube[x][y][z] == 1){
-	    m_cube[x][y][7] = 5;
+	    m_cube[x][7][z] = 0;
 	  }
 	}
       }

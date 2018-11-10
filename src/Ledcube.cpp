@@ -24,11 +24,13 @@ using namespace std;
 
 LedCube::LedCube (uint32_t size)
 {
+  m_speed = 0; // default speed is 0
   init(size);
 }
 
 LedCube::LedCube ()
 {
+  m_speed = 0; // default speed is 0
   init(CUBESIZE);
 }
 
@@ -80,7 +82,6 @@ int LedCube::drawCube() {
 
 int LedCube::init(uint32_t size)
 {
-  m_speed = 0; // default speed is human visible
   m_size = size;
   m_RGBPacketSize   = (size * size * size); 
   m_BWPacketSize    = (size * size + 1); 

@@ -1,4 +1,6 @@
 /*
+ * Copyright Joshua Flank (c) 2017 
+ *
  * Author Joshua Flank
  * September 2017
  * Shows off the LED cube. This also solves the 5x5x5 Z cube puzzle
@@ -104,7 +106,7 @@ int main(int argc, char *argv[])
     case 'e':
       eflag = 1;
       break;
-    case 'a':
+    case 'a': //currently doesn't work
       avalue = optarg;
       break;
     case 'z':
@@ -165,6 +167,7 @@ int main(int argc, char *argv[])
       int spd = strtol(avalue, &avalue, 10);
       my5CubeP->setSpeed(spd);
     }
+    cout << "speed = " << my5CubeP->getSpeed() << endl;
   }
 
   if (zvalue) {

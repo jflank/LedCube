@@ -1,4 +1,6 @@
 /*
+ * Copyright Joshua Flank (c) 2017 
+ *
  * Author Joshua Flank
  * September 2017
  * Basic functionality to solve a 5x5 cube, filled wtih Z's
@@ -230,7 +232,7 @@ int Solve5::solver(int wormID)
     cubeToReceivers();
     return 0;
   }
-  
+
   // Send to GUI and serial every so often.
   // Speed up the sending if there's a delay
   if (m_speed > 0 && m_speed < 1000) { 
